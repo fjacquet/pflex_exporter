@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pflex-exporter
+  labels:
+    app.kubernetes.io/name: pflex-exporter
+spec:
+  selector:
+    app.kubernetes.io/name: pflex-exporter
+  ports:
+    - name: metrics
+      port: 2112
+      targetPort: metrics

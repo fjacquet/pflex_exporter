@@ -96,6 +96,23 @@ The unit runs as an unprivileged `pflex` user with a hardened sandbox
 (`ProtectSystem=strict`, `NoNewPrivileges`, etc.) and maps `systemctl reload` to the
 exporter's SIGHUP config reload.
 
+### Kubernetes
+
+Manifests live in `deploy/kubernetes/` (ConfigMap, Secret, Deployment, Service, and an
+optional Prometheus-Operator ServiceMonitor), wired together with kustomize:
+
+```bash
+# edit deploy/kubernetes/configmap.yaml (clusters) and secret.example.yaml (passwords)
+kubectl apply -k deploy/kubernetes/
+```
+
+The Deployment runs a single replica (the collector is a singleton — a second replica
+would double-poll every cluster, as there's no leader election), as a non-root user with
+`readOnlyRootFilesystem`, dropped capabilities, and `RuntimeDefault` seccomp. The
+liveness probe hits `/metrics` (process health) and readiness hits `/health` (ready once
+at least one cluster is collected). Uncomment the ServiceMonitor in `kustomization.yaml`
+if you run the Prometheus Operator.
+
 ## Metric naming
 
 - Names are `pflex_<object>_<metric>`: `pflex_cluster_*`, `pflex_sds_*`, `pflex_sdc_*`,
