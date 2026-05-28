@@ -65,6 +65,31 @@ snake_case, e.g.:
 Capacity values are reported in **KiB** (`*_in_kb`), matching the PowerFlex API. Multiply
 by 1024 in PromQL if you need bytes.
 
+## Gen2 differences
+
+The generation is detected per cluster (storage-pool `dataLayout`: ErasureCoding = Gen2)
+and exposed as `pflex_cluster_generation{generation="gen2"}`. Gen2 collects from the v5
+metrics API, where values are **pre-computed**, so the shapes are the same but with
+explicit units and Gen2-specific labels:
+
+- **Object prefixes:** Gen1 `pflex_sds_*` becomes `pflex_storagenode_*` (SDS was renamed
+  StorageNode). Gen2 adds `pflex_devicegroup_*` (with a `media_type` label, incl.
+  PMEM/WRC `op` values) and `pflex_sdt_*` (NVMe/TCP path latency). System, Volume,
+  StoragePool, Device, Sdc and ProtectionDomain keep their prefixes.
+- **Unit-explicit derived names** (Gen2 values are bytes/s, bytes, µs):
+  `pflex_<obj>_iops` (shared), `pflex_<obj>_bandwidth_bytes_per_second`,
+  `pflex_<obj>_io_size_bytes`, `pflex_<obj>_latency_microseconds`.
+- **`op` values:** `host`, `device`, `device_local`, `device_remote`, `storage_fe`,
+  `device_pmem`, `wrc`, `rebuild`, `rebalance`, `controller_to_host`, `host_to_controller`.
+  `direction` is `read`/`write`/`trim`/`""`.
+- **Scalars** are bytes/ratios named from the v5 field: `pflex_<obj>_physical_used`,
+  `_raw_total`, `_logical_provisioned`, `_compression_ratio`, `_data_reduction_ratio`,
+  `_utilization_ratio`, etc. (distinct from Gen1's `*_in_kb`).
+- **Volume** carries `volume_type` (BaseVolume/ThinClone) and **Device** carries
+  `storage_node_name/id`. Both Gen1 and Gen2 forms of these two metrics share a union
+  label-key set (inapplicable keys empty) so a single exporter can serve mixed-generation
+  fleets and keep `/metrics` valid.
+
 ## Health & meta metrics
 
 | Metric | Labels | Meaning |
@@ -73,5 +98,6 @@ by 1024 in PromQL if you need bytes.
 | `pflex_last_scrape_timestamp_seconds` | `cluster` | Unix time of the last successful collection. |
 | `pflex_cluster_generation` | `cluster`, `generation` | Always `1`; the `generation` label is `gen1`, `gen2`, or `unknown`. |
 
-A `gen2` cluster reports `pflex_up=1` and `pflex_cluster_generation{generation="gen2"}=1`
-but produces no statistic metrics (it is out of scope for this Gen1 exporter).
+An `unknown`-generation cluster (no recognizable storage-pool layout) reports
+`pflex_up=1` and `pflex_cluster_generation{generation="unknown"}=1` and falls back to the
+Gen1 collection path.

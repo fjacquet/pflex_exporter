@@ -1,0 +1,56 @@
+{
+  "title": "PowerFlex Gen2 - Cluster Capacity",
+  "uid": "pflex-g2-capacity",
+  "tags": ["powerflex", "gen2", "pflex_exporter"],
+  "schemaVersion": 39,
+  "version": 1,
+  "time": { "from": "now-24h", "to": "now" },
+  "refresh": "1m",
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 },
+      { "name": "cluster", "type": "query", "datasource": { "type": "prometheus", "uid": "${datasource}" }, "query": "label_values(pflex_cluster_generation{generation=\"gen2\"}, cluster)", "refresh": 2, "includeAll": true, "multi": true, "current": { "text": "All", "value": "$__all" } }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "title": "Physical Used %", "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "100 * sum by (cluster) (pflex_cluster_physical_used{cluster=~\"$cluster\"}) / sum by (cluster) (pflex_cluster_physical_total{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}}" } ]
+    },
+    {
+      "id": 2, "title": "Physical Capacity (bytes)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "sum by (cluster) (pflex_cluster_physical_total{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} total" },
+        { "refId": "B", "expr": "sum by (cluster) (pflex_cluster_physical_used{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} used" },
+        { "refId": "C", "expr": "sum by (cluster) (pflex_cluster_physical_free{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} free" }
+      ]
+    },
+    {
+      "id": 3, "title": "Logical (used / provisioned, bytes)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "sum by (cluster) (pflex_cluster_logical_used{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} used" },
+        { "refId": "B", "expr": "sum by (cluster) (pflex_cluster_logical_provisioned{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} provisioned" }
+      ]
+    },
+    {
+      "id": 4, "title": "Efficiency Ratios", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 2 }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "max by (cluster) (pflex_cluster_data_reduction_ratio{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} data reduction" },
+        { "refId": "B", "expr": "max by (cluster) (pflex_cluster_compression_ratio{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} compression" },
+        { "refId": "C", "expr": "max by (cluster) (pflex_cluster_efficiency_ratio{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} efficiency" }
+      ]
+    }
+  ]
+}

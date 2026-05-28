@@ -18,8 +18,11 @@ type Client interface {
 	// parent/child relations graph.
 	GetInstances(ctx context.Context) (*models.Instances, *models.Relations, error)
 
-	// GetStatistics fetches POST /api/instances/querySelectedStatistics.
+	// GetStatistics fetches POST /api/instances/querySelectedStatistics (Gen1).
 	GetStatistics(ctx context.Context) (*models.Statistics, error)
+
+	// GetStatisticsV5 fetches Gen2 statistics via the v5 metrics API.
+	GetStatisticsV5(ctx context.Context) (*StatisticsV5, error)
 
 	// Close releases the client's HTTP resources.
 	Close() error

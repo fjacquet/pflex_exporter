@@ -1,0 +1,52 @@
+{
+  "title": "PowerFlex Gen1 - Cluster Capacity",
+  "uid": "pflex-g1-capacity",
+  "tags": ["powerflex", "gen1", "pflex_exporter"],
+  "schemaVersion": 39,
+  "version": 1,
+  "time": { "from": "now-24h", "to": "now" },
+  "refresh": "1m",
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 },
+      { "name": "cluster", "type": "query", "datasource": { "type": "prometheus", "uid": "${datasource}" }, "query": "label_values(pflex_up, cluster)", "refresh": 2, "includeAll": true, "multi": true, "current": { "text": "All", "value": "$__all" } }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "title": "Capacity Used %", "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "100 * sum by (cluster) (pflex_cluster_capacity_in_use_in_kb{cluster=~\"$cluster\"}) / sum by (cluster) (pflex_cluster_max_capacity_in_kb{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}}" } ]
+    },
+    {
+      "id": 2, "title": "Capacity Breakdown (KiB)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "deckbytes" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "sum by (cluster) (pflex_cluster_max_capacity_in_kb{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} max" },
+        { "refId": "B", "expr": "sum by (cluster) (pflex_cluster_capacity_in_use_in_kb{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} used" },
+        { "refId": "C", "expr": "sum by (cluster) (pflex_cluster_spare_capacity_in_kb{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} spare" }
+      ]
+    },
+    {
+      "id": 3, "title": "Compression Ratio", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 2 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "max by (cluster) (pflex_cluster_compression_ratio{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}}" } ]
+    },
+    {
+      "id": 4, "title": "Thin Allocated vs Thick In Use (KiB)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "deckbytes" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "sum by (cluster) (pflex_cluster_thin_capacity_allocated_in_kb{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} thin" },
+        { "refId": "B", "expr": "sum by (cluster) (pflex_cluster_thick_capacity_in_use_in_kb{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} thick" }
+      ]
+    }
+  ]
+}

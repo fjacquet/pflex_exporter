@@ -37,7 +37,9 @@ func TestDetectGeneration(t *testing.T) {
 	}
 }
 
-func TestGen2ClusterIsUpButSkipsStatistics(t *testing.T) {
+// TestGen2ClusterUsesV5Path verifies a Gen2 cluster collects via the v5 metrics API
+// (not the Gen1 querySelectedStatistics endpoint) and reports generation gen2.
+func TestGen2ClusterUsesV5Path(t *testing.T) {
 	g := newMockGateway(t)
 	g.instancesFixture = "instances-gen2.json"
 	store := NewSnapshotStore()
@@ -46,22 +48,22 @@ func TestGen2ClusterIsUpButSkipsStatistics(t *testing.T) {
 	c.CollectOnce(context.Background())
 	cs := store.Load().PerCluster["test-cluster"]
 
-	if cs == nil {
-		t.Fatal("expected cluster snapshot")
-	}
-	if !cs.Up {
-		t.Error("Gen2 cluster should still report Up (reachable), just without stats")
+	if cs == nil || !cs.Up {
+		t.Fatalf("expected cluster up, got %+v", cs)
 	}
 	if cs.Generation != GenerationGen2 {
 		t.Errorf("generation = %q, want gen2", cs.Generation)
 	}
-	if len(cs.Samples) != 0 {
-		t.Errorf("expected no samples for Gen2 cluster, got %d", len(cs.Samples))
+	if len(cs.Samples) == 0 {
+		t.Error("expected Gen2 cluster to produce samples")
 	}
 
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	if g.statsCount != 0 {
-		t.Errorf("expected statistics endpoint NOT called for Gen2, got %d calls", g.statsCount)
+		t.Errorf("Gen1 querySelectedStatistics endpoint must NOT be called for Gen2, got %d", g.statsCount)
+	}
+	if g.statsV5Count == 0 {
+		t.Error("expected the v5 metrics endpoint to be called for Gen2")
 	}
 }

@@ -1,5 +1,6 @@
 /bin/
 /log/
+/vendor/
 coverage.out
 coverage.html
 clusters.yaml

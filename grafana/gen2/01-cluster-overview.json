@@ -1,0 +1,53 @@
+{
+  "title": "PowerFlex Gen2 - Cluster Overview",
+  "uid": "pflex-g2-cluster-overview",
+  "tags": ["powerflex", "gen2", "pflex_exporter"],
+  "schemaVersion": 39,
+  "version": 1,
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 },
+      { "name": "cluster", "type": "query", "datasource": { "type": "prometheus", "uid": "${datasource}" }, "query": "label_values(pflex_cluster_generation{generation=\"gen2\"}, cluster)", "refresh": 2, "includeAll": true, "multi": true, "current": { "text": "All", "value": "$__all" } }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "title": "Host IOPS (read + write)", "type": "timeseries",
+      "description": "Pre-computed per-second gauge; aggregate with sum, never rate().",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "iops" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (cluster, direction) (pflex_cluster_iops{cluster=~\"$cluster\", op=\"host\"})", "legendFormat": "{{cluster}} {{direction}}" } ]
+    },
+    {
+      "id": 2, "title": "Host Bandwidth (bytes/s)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (cluster, direction) (pflex_cluster_bandwidth_bytes_per_second{cluster=~\"$cluster\", op=\"host\"})", "legendFormat": "{{cluster}} {{direction}}" } ]
+    },
+    {
+      "id": 3, "title": "Host Latency (µs)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "µs" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "avg by (cluster, direction) (pflex_cluster_latency_microseconds{cluster=~\"$cluster\", op=\"host\"})", "legendFormat": "{{cluster}} {{direction}}" } ]
+    },
+    {
+      "id": 4, "title": "Capacity Used % (physical)", "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "100 * sum by (cluster) (pflex_cluster_physical_used{cluster=~\"$cluster\"}) / sum by (cluster) (pflex_cluster_physical_total{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}}" } ]
+    },
+    {
+      "id": 5, "title": "Data Reduction Ratio", "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 2 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "max by (cluster) (pflex_cluster_data_reduction_ratio{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}}" } ]
+    }
+  ]
+}

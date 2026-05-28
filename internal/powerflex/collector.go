@@ -87,29 +87,32 @@ func (c *Collector) collectCluster(ctx context.Context, client Client) *ClusterS
 
 	cs.Generation = detectGeneration(instances)
 	if cs.Generation == GenerationGen2 {
-		log.Warnf("cluster %q: detected Gen2 (ErasureCoding); skipping statistics (Gen1-only exporter)", client.Name())
+		stats, err := client.GetStatisticsV5(ctx)
+		if err != nil {
+			log.Warnf("cluster %q: v5 statistics fetch failed: %v", client.Name(), err)
+			cs.ScrapeError = err.Error()
+			return cs
+		}
+		cs.Samples = buildSamplesGen2(client.Name(), instances, relations, stats)
 		cs.Up = true
 		return cs
 	}
 
+	// Gen1 (and unknown) use the querySelectedStatistics path.
 	stats, err := client.GetStatistics(ctx)
 	if err != nil {
 		log.Warnf("cluster %q: statistics fetch failed: %v", client.Name(), err)
 		cs.ScrapeError = err.Error()
 		return cs
 	}
-
-	cs.Samples = buildSamples(client.Name(), instances, relations, stats)
+	cs.Samples = buildSamplesGen1(client.Name(), instances, relations, stats)
 	cs.Up = true
 	return cs
 }
 
-// buildSamples derives every metric sample for one cluster across all 7 object types.
-func buildSamples(clusterName string, in *models.Instances, rel *models.Relations, stats *models.Statistics) []Sample {
-	systemID := ""
-	if in.System != nil {
-		systemID = in.System.ID
-	}
+// buildSamplesGen1 derives every metric sample for one Gen1 cluster (querySelectedStatistics).
+func buildSamplesGen1(clusterName string, in *models.Instances, rel *models.Relations, stats *models.Statistics) []Sample {
+	systemID := systemIDOf(in)
 
 	var samples []Sample
 
@@ -119,8 +122,7 @@ func buildSamples(clusterName string, in *models.Instances, rel *models.Relation
 		samples = append(samples, deriveSamples(metricPrefix[models.TypeSystem], base, stats.System)...)
 	}
 
-	// All other object types via their label builders.
-	for objType, builder := range labelBuilders {
+	for objType, builder := range labelBuildersGen1 {
 		prefix := metricPrefix[objType]
 		for _, obj := range in.Get(objType) {
 			sm := stats.Object(objType, obj.ID)
@@ -135,4 +137,43 @@ func buildSamples(clusterName string, in *models.Instances, rel *models.Relation
 		}
 	}
 	return samples
+}
+
+// buildSamplesGen2 derives every metric sample for one Gen2 cluster (v5 metrics API).
+func buildSamplesGen2(clusterName string, in *models.Instances, rel *models.Relations, stats *StatisticsV5) []Sample {
+	systemID := systemIDOf(in)
+
+	var samples []Sample
+
+	// System: flat v5 stats keyed by the System object id.
+	if in.System != nil {
+		if sm := stats.Object(models.TypeSystem, in.System.ID); sm != nil {
+			base := baseLabels(clusterName, systemID)
+			samples = append(samples, deriveSamplesV5(metricPrefix[models.TypeSystem], base, sm, v5Metrics[models.TypeSystem])...)
+		}
+	}
+
+	for objType, builder := range labelBuildersGen2 {
+		prefix := metricPrefix[objType]
+		mapping := v5Metrics[objType]
+		for _, obj := range in.Get(objType) {
+			sm := stats.Object(objType, obj.ID)
+			if sm == nil {
+				continue
+			}
+			labels, ok := builder(clusterName, systemID, obj, in, rel)
+			if !ok {
+				continue
+			}
+			samples = append(samples, deriveSamplesV5(prefix, labels, sm, mapping)...)
+		}
+	}
+	return samples
+}
+
+func systemIDOf(in *models.Instances) string {
+	if in.System != nil {
+		return in.System.ID
+	}
+	return ""
 }

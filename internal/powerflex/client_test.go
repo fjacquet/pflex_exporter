@@ -25,7 +25,8 @@ type mockGateway struct {
 	loginCount       int
 	refreshCount     int
 	instancesCount   int
-	statsCount       int
+	statsCount       int    // Gen1 querySelectedStatistics calls
+	statsV5Count     int    // Gen2 v5 metrics/query calls
 	failRefresh      bool   // when true, /rest/auth/update-token returns 400
 	failInstances    bool   // when true, /api/instances returns 500
 	instancesFixture string // fixture file served by /api/instances
@@ -87,6 +88,27 @@ func newMockGateway(t *testing.T) *mockGateway {
 		w.Header().Set("Content-Type", "application/json")
 		writeBytes(w, readFixture(t, "statistics.json"))
 	})
+	mux.HandleFunc("/dtapi/rest/v1/metrics/query", func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		body, _ := io.ReadAll(r.Body)
+		var req struct {
+			ResourceType string `json:"resource_type"`
+		}
+		_ = json.Unmarshal(body, &req)
+		g.mu.Lock()
+		g.statsV5Count++
+		g.mu.Unlock()
+
+		resources, ok := readV5Fixture(t)[req.ResourceType]
+		if !ok {
+			resources = json.RawMessage("[]")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		writeBytes(w, []byte(`{"resources":`+string(resources)+`}`))
+	})
 
 	g.server = httptest.NewTLSServer(mux)
 	t.Cleanup(g.server.Close)
@@ -129,6 +151,16 @@ func readFixture(t *testing.T, name string) []byte {
 		t.Fatalf("read fixture %s: %v", name, err)
 	}
 	return data
+}
+
+// readV5Fixture loads the Gen2 v5 statistics fixture as resource_type -> resources array.
+func readV5Fixture(t *testing.T) map[string]json.RawMessage {
+	t.Helper()
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(readFixture(t, "statistics-v5.json"), &m); err != nil {
+		t.Fatalf("parse statistics-v5.json: %v", err)
+	}
+	return m
 }
 
 func TestLoginOnFirstRequest(t *testing.T) {

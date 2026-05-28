@@ -1,0 +1,38 @@
+{
+  "title": "PowerFlex Gen1 - Volumes",
+  "uid": "pflex-g1-volumes",
+  "tags": ["powerflex", "gen1", "pflex_exporter"],
+  "schemaVersion": 39,
+  "version": 1,
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 },
+      { "name": "cluster", "type": "query", "datasource": { "type": "prometheus", "uid": "${datasource}" }, "query": "label_values(pflex_up, cluster)", "refresh": 2, "includeAll": true, "multi": true, "current": { "text": "All", "value": "$__all" } }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "title": "Top Volumes by IOPS", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "iops" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "topk(10, sum by (volume_name) (pflex_volume_iops{cluster=~\"$cluster\", op=\"userData\"}))", "legendFormat": "{{volume_name}}" } ]
+    },
+    {
+      "id": 2, "title": "Top Volumes by Bandwidth (KB/s)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "KBs" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "topk(10, sum by (volume_name) (pflex_volume_bandwidth_kb_per_second{cluster=~\"$cluster\", op=\"userData\"}))", "legendFormat": "{{volume_name}}" } ]
+    },
+    {
+      "id": 3, "title": "Volume Latency", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "avg by (volume_name, direction) (pflex_volume_latency{cluster=~\"$cluster\", op=\"userDataSdc\"})", "legendFormat": "{{volume_name}} {{direction}}" } ]
+    }
+  ]
+}

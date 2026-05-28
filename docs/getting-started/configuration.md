@@ -46,6 +46,15 @@ clusters:
 | `clusters[]` | `name` | Unique; becomes the `cluster` label/attribute on every metric. |
 | `clusters[]` | `gateway`, `username`, `password` | Connection details. `insecureSkipVerify` accepts self-signed gateway certs. |
 
+## Generations
+
+There is nothing to configure per generation. The exporter inspects each cluster's
+storage-pool layout at collection time and picks the right path automatically: Gen1
+(mirroring) uses the `querySelectedStatistics` API; Gen2 (erasure coding) uses the v5
+metrics API. The detected generation is published as
+`pflex_cluster_generation{generation="gen1|gen2|unknown"}`. One process can monitor a
+mix of Gen1 and Gen2 clusters.
+
 ## Secrets
 
 Cluster passwords should not be written in plaintext. Two options:
