@@ -17,12 +17,54 @@
       ]
     }
   ],
+  "storageNodeList": [
+    {
+      "id": "sn1",
+      "name": "node-1",
+      "links": [
+        { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
+      ]
+    }
+  ],
+  "deviceGroupList": [
+    {
+      "id": "dg1",
+      "name": "dg-1",
+      "mediaType": "SSD",
+      "links": [
+        { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
+      ]
+    }
+  ],
+  "deviceList": [
+    {
+      "id": "dev1",
+      "name": "device-1",
+      "deviceCurrentPathName": "/dev/sdb",
+      "links": [
+        { "rel": "/api/parent/relationship/storageNodeId", "href": "/api/instances/StorageNode::sn1" }
+      ]
+    }
+  ],
   "volumeList": [
     {
       "id": "vol1",
       "name": "volume-1",
+      "volumeType": "ThinProvisioned",
       "links": [
         { "rel": "/api/parent/relationship/storagePoolId", "href": "/api/instances/StoragePool::sp1" }
+      ]
+    }
+  ],
+  "sdcList": [
+    { "id": "sdc1", "name": null, "sdcIp": "10.0.0.9", "links": [] }
+  ],
+  "sdtList": [
+    {
+      "id": "sdt1",
+      "name": "sdt-1",
+      "links": [
+        { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
       ]
     }
   ]

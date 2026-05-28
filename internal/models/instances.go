@@ -5,15 +5,20 @@ import (
 	"strings"
 )
 
-// PowerFlex object type names (normalized, matching querySelectedStatistics types).
+// PowerFlex object type names (normalized).
 const (
 	TypeSystem           = "System"
-	TypeSds              = "Sds"
-	TypeSdc              = "Sdc"
-	TypeVolume           = "Volume"
-	TypeStoragePool      = "StoragePool"
-	TypeDevice           = "Device"
+	TypeSds              = "Sds"         // Gen1 storage server
+	TypeSdc              = "Sdc"         // storage client (both gens)
+	TypeVolume           = "Volume"      // both gens
+	TypeStoragePool      = "StoragePool" // both gens
+	TypeDevice           = "Device"      // both gens
 	TypeProtectionDomain = "ProtectionDomain"
+
+	// Gen2-only object types.
+	TypeStorageNode = "StorageNode" // Gen2 storage server (renamed from Sds)
+	TypeDeviceGroup = "DeviceGroup" // Gen2 grouping of devices by media type
+	TypeSdt         = "Sdt"         // Gen2 NVMe/TCP target
 )
 
 // Link is a PowerFlex object relationship link as returned in an object's "links" array.
@@ -31,7 +36,9 @@ type Instance struct {
 	Links                 []Link `json:"links"`
 	DeviceCurrentPathName string `json:"deviceCurrentPathName,omitempty"`
 	SdcIP                 string `json:"sdcIp,omitempty"`
-	DataLayout            string `json:"dataLayout,omitempty"`
+	DataLayout            string `json:"dataLayout,omitempty"` // StoragePool: generation discriminator
+	VolumeType            string `json:"volumeType,omitempty"` // Gen2 Volume
+	MediaType             string `json:"mediaType,omitempty"`  // Gen2 DeviceGroup
 }
 
 // DisplayName returns Name, or ID when Name is empty (mirrors Dell's fallback).

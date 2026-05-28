@@ -11,7 +11,7 @@ server:
 
 collection:
   interval: "10s" # how often the background loop polls every cluster
-  timeout: "8s"   # per-cluster collection timeout
+  timeout: "8s" # per-cluster collection timeout
 
 opentelemetry:
   # OTLP metric push (OpenTelemetry-first). Metrics are pushed to a collector/backend.

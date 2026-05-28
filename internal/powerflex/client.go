@@ -27,8 +27,9 @@ const (
 	maxIdleConnsPerHost = 20
 	idleConnTimeout     = 90 * time.Second
 
-	instancesPath  = "/api/instances"
-	statisticsPath = "/api/instances/querySelectedStatistics"
+	instancesPath    = "/api/instances"
+	statisticsPath   = "/api/instances/querySelectedStatistics" // Gen1
+	v5StatisticsPath = "/dtapi/rest/v1/metrics/query"           // Gen2
 )
 
 // ClientOption configures optional ClusterClient settings.
@@ -115,13 +116,46 @@ func (c *ClusterClient) GetInstances(ctx context.Context) (*models.Instances, *m
 	return models.ParseInstances(body)
 }
 
-// GetStatistics fetches and parses POST /api/instances/querySelectedStatistics.
+// GetStatistics fetches and parses POST /api/instances/querySelectedStatistics (Gen1).
 func (c *ClusterClient) GetStatistics(ctx context.Context) (*models.Statistics, error) {
 	body, err := c.post(ctx, statisticsPath, queryStatsBody)
 	if err != nil {
 		return nil, err
 	}
 	return models.ParseStatistics(body)
+}
+
+// GetStatisticsV5 fetches Gen2 metrics by querying the v5 endpoint once per resource
+// type. A failed per-type query is logged and skipped (graceful degradation).
+func (c *ClusterClient) GetStatisticsV5(ctx context.Context) (*StatisticsV5, error) {
+	stats := &StatisticsV5{ByType: make(map[string]map[string]map[string]float64, len(v5Metrics))}
+	for typeName, mapping := range v5Metrics {
+		v5type, ok := v5ResourceType[typeName]
+		if !ok || len(mapping) == 0 {
+			continue
+		}
+		metricNames := make([]string, 0, len(mapping))
+		for name := range mapping {
+			metricNames = append(metricNames, name)
+		}
+		reqBody, err := json.Marshal(map[string]any{"resource_type": v5type, "metrics": metricNames})
+		if err != nil {
+			return nil, err
+		}
+
+		respBody, err := c.post(ctx, v5StatisticsPath, reqBody)
+		if err != nil {
+			log.Warnf("cluster %q: v5 metrics query for %s failed: %v", c.name, typeName, err)
+			continue
+		}
+		byID, err := parseV5Response(respBody)
+		if err != nil {
+			log.Warnf("cluster %q: failed to parse v5 response for %s: %v", c.name, typeName, err)
+			continue
+		}
+		stats.ByType[typeName] = byID
+	}
+	return stats, nil
 }
 
 func (c *ClusterClient) get(ctx context.Context, path string) ([]byte, error) {

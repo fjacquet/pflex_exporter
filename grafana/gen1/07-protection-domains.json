@@ -1,0 +1,38 @@
+{
+  "title": "PowerFlex Gen1 - Protection Domains",
+  "uid": "pflex-g1-pd",
+  "tags": ["powerflex", "gen1", "pflex_exporter"],
+  "schemaVersion": 39,
+  "version": 1,
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 },
+      { "name": "cluster", "type": "query", "datasource": { "type": "prometheus", "uid": "${datasource}" }, "query": "label_values(pflex_up, cluster)", "refresh": 2, "includeAll": true, "multi": true, "current": { "text": "All", "value": "$__all" } }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "title": "PD IOPS (total)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "iops" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (protection_domain_name, direction) (pflex_protectiondomain_iops{cluster=~\"$cluster\", op=\"total\"})", "legendFormat": "{{protection_domain_name}} {{direction}}" } ]
+    },
+    {
+      "id": 2, "title": "PD Capacity Used %", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "100 * pflex_protectiondomain_capacity_in_use_in_kb{cluster=~\"$cluster\"} / pflex_protectiondomain_max_capacity_in_kb{cluster=~\"$cluster\"}", "legendFormat": "{{protection_domain_name}}" } ]
+    },
+    {
+      "id": 3, "title": "PD Rebuild/Rebalance IOPS", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "iops" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (protection_domain_name, op) (pflex_protectiondomain_iops{cluster=~\"$cluster\", op=~\"fwdRebuild|bckRebuild|rebalance\"})", "legendFormat": "{{protection_domain_name}} {{op}}" } ]
+    }
+  ]
+}

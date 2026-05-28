@@ -1,0 +1,38 @@
+{
+  "title": "PowerFlex Gen1 - SDS",
+  "uid": "pflex-g1-sds",
+  "tags": ["powerflex", "gen1", "pflex_exporter"],
+  "schemaVersion": 39,
+  "version": 1,
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 },
+      { "name": "cluster", "type": "query", "datasource": { "type": "prometheus", "uid": "${datasource}" }, "query": "label_values(pflex_up, cluster)", "refresh": 2, "includeAll": true, "multi": true, "current": { "text": "All", "value": "$__all" } }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "title": "SDS IOPS (total)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "iops" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (sds, direction) (pflex_sds_iops{cluster=~\"$cluster\", op=\"total\"})", "legendFormat": "{{sds}} {{direction}}" } ]
+    },
+    {
+      "id": 2, "title": "SDS Bandwidth (KB/s, total)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "KBs" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (sds, direction) (pflex_sds_bandwidth_kb_per_second{cluster=~\"$cluster\", op=\"total\"})", "legendFormat": "{{sds}} {{direction}}" } ]
+    },
+    {
+      "id": 3, "title": "SDS Primary IOPS by Protection Domain", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "iops" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (protection_domain_name, direction) (pflex_sds_iops{cluster=~\"$cluster\", op=\"primary\"})", "legendFormat": "{{protection_domain_name}} {{direction}}" } ]
+    }
+  ]
+}

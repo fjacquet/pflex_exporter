@@ -1,0 +1,45 @@
+{
+  "title": "PowerFlex Gen2 - Devices",
+  "uid": "pflex-g2-devices",
+  "tags": ["powerflex", "gen2", "pflex_exporter"],
+  "schemaVersion": 39,
+  "version": 1,
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 },
+      { "name": "cluster", "type": "query", "datasource": { "type": "prometheus", "uid": "${datasource}" }, "query": "label_values(pflex_cluster_generation{generation=\"gen2\"}, cluster)", "refresh": 2, "includeAll": true, "multi": true, "current": { "text": "All", "value": "$__all" } }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "title": "Device IOPS", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "iops" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (device_name, direction) (pflex_device_iops{cluster=~\"$cluster\", op=\"device\"})", "legendFormat": "{{device_name}} {{direction}}" } ]
+    },
+    {
+      "id": 2, "title": "Device Bandwidth (bytes/s)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (device_name, direction) (pflex_device_bandwidth_bytes_per_second{cluster=~\"$cluster\", op=\"device\"})", "legendFormat": "{{device_name}} {{direction}}" } ]
+    },
+    {
+      "id": 3, "title": "Device Latency (µs)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "µs" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "avg by (device_name, direction) (pflex_device_latency_microseconds{cluster=~\"$cluster\", op=\"device\"})", "legendFormat": "{{device_name}} {{direction}}" } ]
+    },
+    {
+      "id": 4, "title": "Device IO Size (bytes)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "avg by (device_name, direction) (pflex_device_io_size_bytes{cluster=~\"$cluster\", op=\"device\"})", "legendFormat": "{{device_name}} {{direction}}" } ]
+    }
+  ]
+}

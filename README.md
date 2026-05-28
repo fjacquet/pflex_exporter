@@ -8,18 +8,18 @@
 [![Latest Release](https://img.shields.io/github/v/release/fjacquet/pflex_exporter?sort=semver)](https://github.com/fjacquet/pflex_exporter/releases)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-A Go exporter for **Dell PowerFlex Gen1** clusters. It authenticates to the PowerFlex
-gateway REST API, collects the full Dell statistic set across all object types, and
-exposes the metrics via **both** a Prometheus `/metrics` endpoint **and** an OTLP metric
-push. It replaces Dell's Python + Telegraf + InfluxDB collection layer, following the
-architecture of [`nbu_exporter`](https://github.com/fjacquet/nbu_exporter).
+A Go exporter for **Dell PowerFlex** clusters (**Gen1 and Gen2**). It authenticates to the
+PowerFlex gateway REST API, collects the full Dell statistic set across all object types,
+and exposes the metrics via **both** a Prometheus `/metrics` endpoint **and** an OTLP
+metric push. It replaces Dell's Python + Telegraf + InfluxDB collection layer, following
+the architecture of [`nbu_exporter`](https://github.com/fjacquet/nbu_exporter).
 
 ## Features
 
 - **Dual export**: Prometheus pull (`/metrics`) and OTLP metric push, fed from one shared snapshot.
-- **Full parity**: all 7 object types — System (cluster), SDS, SDC, Device, Volume, StoragePool, ProtectionDomain.
-- **Multi-cluster**: one process monitors many clusters; every metric carries a `cluster` label.
-- **Gen1-only**: detects Gen1 vs Gen2 (ErasureCoding); Gen2 clusters are flagged and skipped without killing the process.
+- **Both generations, auto-detected**: Gen1 (mirroring) via `querySelectedStatistics`, Gen2 (erasure coding) via the v5 metrics API — chosen per cluster from storage-pool layout.
+- **Full parity**: Gen1's 7 object types plus Gen2's StorageNode, DeviceGroup (PMEM/WRC) and Sdt (NVMe/TCP).
+- **Multi-cluster**: one process monitors many clusters (mixed generations OK); every metric carries a `cluster` label.
 - **Operational**: per-cluster OAuth token lifecycle, graceful degradation, hot config reload (SIGHUP + file watch), snapshot-based health endpoint, optional OTLP tracing.
 
 ## Quick start
@@ -62,10 +62,11 @@ make ci            # the gate CI runs (adds go test -race + govulncheck)
 
 ## Notes
 
-- Supported baseline is **PowerFlex 4.5+** (Gen1), using the 4.x bearer auth flow.
+- Supports **PowerFlex 4.5+ (Gen1)** and **5.x+ (Gen2)**, both via the bearer auth flow; generation is auto-detected per cluster.
 - IOPS and bandwidth are already per-second gauges — aggregate with `sum`/`avg` in PromQL, never `rate()`.
+- Gen2 uses unit-explicit metric names (`_bandwidth_bytes_per_second`, `_io_size_bytes`, `_latency_microseconds`); Gen1 uses KB-based names.
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE). Matches Dell's upstream PowerFlex Gen1
+Apache License 2.0 — see [LICENSE](LICENSE). Matches Dell's upstream PowerFlex
 monitoring tooling that this exporter is derived from.

@@ -1,17 +1,23 @@
 # Dashboards
 
-Importable Grafana dashboards (PromQL) live in `grafana/`:
+Importable Grafana dashboards (PromQL) live in `grafana/`, split by generation:
 
-| File | Dashboard |
-|---|---|
-| `pflex-cluster-overview.json` | Cluster capacity, IOPS, bandwidth, latency, rebuild/rebalance, compression |
-| `pflex-storage-pools.json` | Per-pool capacity, spare, IOPS and bandwidth |
+- `grafana/gen1/` (8): cluster overview, devices, storage pools, SDC, SDS, volumes,
+  protection domains, cluster capacity.
+- `grafana/gen2/` (8): cluster overview, clusters (stacked), devices, pools, SDC/hosts,
+  storage node, volumes, cluster capacity.
+
+Use the **gen1** dashboards for mirroring clusters and the **gen2** dashboards for
+erasure-coding clusters — the gen2 dashboards filter on
+`pflex_cluster_generation{generation="gen2"}` and use the unit-explicit Gen2 metric names
+(bytes/s, bytes, µs). They are JSON-validated; validate against your Grafana before
+relying on them.
 
 ## Import
 
 In Grafana: **Dashboards → New → Import**, upload the JSON, and select your Prometheus
-data source. Both dashboards include a `cluster` template variable (and the storage-pool
-dashboard a `pool` variable) populated via `label_values(...)`.
+data source. Dashboards include a `cluster` template variable (and pool dashboards a
+`pool` variable) populated via `label_values(...)`.
 
 ## PromQL conventions
 
@@ -35,6 +41,7 @@ topk(10, sum by (volume_name) (pflex_volume_bandwidth_kb_per_second{op="userData
 
 ## Building more
 
-The two dashboards demonstrate the metric/label conventions; additional per-object
-dashboards (devices, volumes, SDC, SDS, protection domains, capacity planning) can be
-built mechanically from the same [metric naming scheme](metrics.md).
+The dashboards follow the [metric naming scheme](metrics.md); new panels can be built
+mechanically from it. Remember that Gen2 uses unit-explicit names
+(`_bandwidth_bytes_per_second`, `_io_size_bytes`, `_latency_microseconds`) and different
+`op` values (`host`, `device`, `storage_fe`, `device_pmem`, `wrc`, …).

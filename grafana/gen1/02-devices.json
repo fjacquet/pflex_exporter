@@ -1,0 +1,46 @@
+{
+  "title": "PowerFlex Gen1 - Devices",
+  "uid": "pflex-g1-devices",
+  "tags": ["powerflex", "gen1", "pflex_exporter"],
+  "schemaVersion": 39,
+  "version": 1,
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 },
+      { "name": "cluster", "type": "query", "datasource": { "type": "prometheus", "uid": "${datasource}" }, "query": "label_values(pflex_up, cluster)", "refresh": 2, "includeAll": true, "multi": true, "current": { "text": "All", "value": "$__all" } }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "title": "Device IOPS (total)", "type": "timeseries",
+      "description": "Pre-derived per-second gauge; aggregate with sum, never rate().",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "iops" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (device_name, direction) (pflex_device_iops{cluster=~\"$cluster\", op=\"total\"})", "legendFormat": "{{device_name}} {{direction}}" } ]
+    },
+    {
+      "id": 2, "title": "Device Bandwidth (KB/s, total)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "KBs" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (device_name, direction) (pflex_device_bandwidth_kb_per_second{cluster=~\"$cluster\", op=\"total\"})", "legendFormat": "{{device_name}} {{direction}}" } ]
+    },
+    {
+      "id": 3, "title": "Avg Device Read Latency (µs)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "µs" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "max by (device_name) (pflex_device_avg_read_latency_in_microsec{cluster=~\"$cluster\"})", "legendFormat": "{{device_name}}" } ]
+    },
+    {
+      "id": 4, "title": "Avg Read IO Size (bytes)", "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "max by (device_name) (pflex_device_avg_read_size_in_bytes{cluster=~\"$cluster\"})", "legendFormat": "{{device_name}}" } ]
+    }
+  ]
+}

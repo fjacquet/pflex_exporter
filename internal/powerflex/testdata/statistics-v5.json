@@ -1,0 +1,66 @@
+{
+  "system": [
+    { "id": "clu2", "metrics": [
+      { "name": "host_read_iops", "values": [100] },
+      { "name": "host_read_bandwidth", "values": [2048000] },
+      { "name": "avg_host_read_latency", "values": [500] },
+      { "name": "physical_used", "values": [4000000] },
+      { "name": "compression_ratio", "values": [2] }
+    ]}
+  ],
+  "storage_node": [
+    { "id": "sn1", "metrics": [
+      { "name": "total_device_read_iops", "values": [80] },
+      { "name": "storage_fe_read_bandwidth", "values": [1600000] },
+      { "name": "raw_total", "values": [9000000] }
+    ]}
+  ],
+  "device": [
+    { "id": "dev1", "metrics": [
+      { "name": "total_device_read_iops", "values": [80] },
+      { "name": "avg_device_read_latency", "values": [300] },
+      { "name": "raw_total", "values": [3000000] }
+    ]}
+  ],
+  "volume": [
+    { "id": "vol1", "metrics": [
+      { "name": "host_read_iops", "values": [60] },
+      { "name": "host_read_bandwidth", "values": [1200000] },
+      { "name": "avg_host_read_latency", "values": [250] },
+      { "name": "logical_used", "values": [500000] }
+    ]}
+  ],
+  "storage_pool": [
+    { "id": "sp1", "metrics": [
+      { "name": "host_read_iops", "values": [90] },
+      { "name": "physical_used", "values": [4000000] },
+      { "name": "compression_ratio", "values": [2.5] }
+    ]}
+  ],
+  "sdc": [
+    { "id": "sdc1", "metrics": [
+      { "name": "host_read_iops", "values": [60] },
+      { "name": "avg_host_read_latency", "values": [250] }
+    ]}
+  ],
+  "device_group": [
+    { "id": "dg1", "metrics": [
+      { "name": "total_device_pmem_read_iops", "values": [10] },
+      { "name": "total_wrc_read_iops", "values": [5] },
+      { "name": "raw_total", "values": [9000000] }
+    ]}
+  ],
+  "protection_domain": [
+    { "id": "pd1", "metrics": [
+      { "name": "host_read_iops", "values": [150] },
+      { "name": "rebuild_rate", "values": [5000] },
+      { "name": "physical_used", "values": [8000000] }
+    ]}
+  ],
+  "sdt": [
+    { "id": "sdt1", "metrics": [
+      { "name": "avg_controller_to_host_latency", "values": [40] },
+      { "name": "avg_host_to_controller_latency", "values": [30] }
+    ]}
+  ]
+}
