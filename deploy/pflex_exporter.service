@@ -1,0 +1,42 @@
+[Unit]
+Description=PowerFlex Gen1 Exporter (Prometheus + OTLP)
+Documentation=https://github.com/fjacquet/pflex_exporter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pflex
+Group=pflex
+
+# Cluster secrets referenced as ${FLEX1_PASSWORD} etc. in config.yaml.
+# Keep this file mode 0600, owned root:pflex.
+EnvironmentFile=/etc/pflex_exporter/pflex_exporter.env
+
+ExecStart=/usr/local/bin/pflex_exporter --config /etc/pflex_exporter/config.yaml
+# `systemctl reload pflex_exporter` performs a live config reload (SIGHUP).
+ExecReload=/bin/kill -HUP $MAINPID
+
+Restart=on-failure
+RestartSec=5
+
+# Log to the journal (set `logName: ""` in config.yaml). View with:
+#   journalctl -u pflex_exporter -f
+StandardOutput=journal
+StandardError=journal
+
+# --- Hardening (works with the journald logging above; no writable paths needed) ---
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

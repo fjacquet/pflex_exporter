@@ -69,6 +69,33 @@ Docker / compose (exporter + Prometheus + OTLP collector):
 FLEX1_PASSWORD=... docker compose up --build
 ```
 
+### systemd (EL9 host install)
+
+For a non-container deployment on Enterprise Linux 9 (the platform Dell's monitoring
+targets), install the unit in `deploy/`:
+
+```bash
+# binary + config + secrets
+sudo useradd --system --no-create-home --shell /usr/sbin/nologin pflex
+sudo install -m 0755 bin/pflex_exporter /usr/local/bin/pflex_exporter
+sudo install -d -o root -g pflex -m 0750 /etc/pflex_exporter
+sudo install -m 0640 -o root -g pflex config.yaml /etc/pflex_exporter/config.yaml
+sudo install -m 0600 -o root -g pflex deploy/pflex_exporter.env.example /etc/pflex_exporter/pflex_exporter.env
+# edit the secret(s) in /etc/pflex_exporter/pflex_exporter.env
+
+# service (logs to the journal; set `logName: ""` in config.yaml)
+sudo install -m 0644 deploy/pflex_exporter.service /etc/systemd/system/pflex_exporter.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now pflex_exporter
+
+journalctl -u pflex_exporter -f          # view logs
+sudo systemctl reload pflex_exporter     # live config reload (sends SIGHUP)
+```
+
+The unit runs as an unprivileged `pflex` user with a hardened sandbox
+(`ProtectSystem=strict`, `NoNewPrivileges`, etc.) and maps `systemctl reload` to the
+exporter's SIGHUP config reload.
+
 ## Metric naming
 
 - Names are `pflex_<object>_<metric>`: `pflex_cluster_*`, `pflex_sds_*`, `pflex_sdc_*`,
