@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/fjacquet/pflex_exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/fjacquet/pflex_exporter/actions/workflows/ci.yml)
 [![Release](https://github.com/fjacquet/pflex_exporter/actions/workflows/release.yml/badge.svg)](https://github.com/fjacquet/pflex_exporter/actions/workflows/release.yml)
+[![Docs](https://github.com/fjacquet/pflex_exporter/actions/workflows/docs.yml/badge.svg)](https://fjacquet.github.io/pflex_exporter/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/fjacquet/pflex_exporter)](https://goreportcard.com/report/github.com/fjacquet/pflex_exporter)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/fjacquet/pflex_exporter)](go.mod)
 [![Latest Release](https://img.shields.io/github/v/release/fjacquet/pflex_exporter?sort=semver)](https://github.com/fjacquet/pflex_exporter/releases)
@@ -18,157 +19,53 @@ architecture of [`nbu_exporter`](https://github.com/fjacquet/nbu_exporter).
 - **Dual export**: Prometheus pull (`/metrics`) and OTLP metric push, fed from one shared snapshot.
 - **Full parity**: all 7 object types — System (cluster), SDS, SDC, Device, Volume, StoragePool, ProtectionDomain.
 - **Multi-cluster**: one process monitors many clusters; every metric carries a `cluster` label.
-- **Gen1-only**: detects Gen1 (FineGranularity/MediumGranularity) vs Gen2 (ErasureCoding); Gen2 clusters are flagged and skipped without killing the process.
-- **Operational**: per-cluster OAuth token lifecycle, graceful per-cluster degradation, hot config reload (SIGHUP + file watch), snapshot-based health endpoint, optional OTLP tracing.
+- **Gen1-only**: detects Gen1 vs Gen2 (ErasureCoding); Gen2 clusters are flagged and skipped without killing the process.
+- **Operational**: per-cluster OAuth token lifecycle, graceful degradation, hot config reload (SIGHUP + file watch), snapshot-based health endpoint, optional OTLP tracing.
 
-## Architecture
-
-A single background **collection loop** polls every cluster on `collection.interval`,
-derives metrics, and publishes an immutable **snapshot** (RWMutex pointer-swap). Both the
-Prometheus collector (`Collect()` reads the snapshot) and the OTLP exporter (observable
-gauges read the snapshot) serve from that snapshot, so API load is independent of the
-number of scrapers and push cadence.
-
-```
-PowerFlex gateways ──► ClusterClient (auth + REST) ──► collection loop ──► SnapshotStore
-                                                                              │      │
-                                                                  Prometheus ◄┘      └► OTLP push
-```
-
-## Configuration
-
-See `config.yaml`. Cluster passwords support `${ENV_VAR}` interpolation or a `passwordFile`.
-
-```yaml
-server:        { host: "0.0.0.0", port: "2112", uri: "/metrics", logName: "" }
-collection:    { interval: "10s", timeout: "8s" }
-opentelemetry:
-  metrics:     { enabled: false, endpoint: "localhost:4317", insecure: true, interval: "10s" }
-  tracing:     { enabled: false, endpoint: "localhost:4317", insecure: true, samplingRate: 0.1 }
-clusters:
-  - { name: flex-cluster1, gateway: <ip-or-host>, username: <monitor-user>, password: "${FLEX1_PASSWORD}", insecureSkipVerify: true }
-```
-
-A `monitor`-type PowerFlex user is sufficient. For PowerFlex 4.0+, `gateway` is the
-primary ingress IP (PowerFlex Manager UI).
-
-## Running
+## Quick start
 
 ```bash
 make cli
-FLEX1_PASSWORD=... ./bin/pflex_exporter --config config.yaml
-# metrics at http://localhost:2112/metrics, health at /health
-
-# one-shot collection (no server):
-./bin/pflex_exporter --config config.yaml --once
+export FLEX1_PASSWORD='your-monitor-password'
+./bin/pflex_exporter --config config.yaml
+# metrics: http://localhost:2112/metrics   health: http://localhost:2112/health
 ```
 
-Docker / compose (exporter + Prometheus + OTLP collector):
+Or with Docker: `docker pull ghcr.io/fjacquet/pflex_exporter:latest`.
 
-```bash
-FLEX1_PASSWORD=... docker compose up --build
-```
+## Documentation
 
-### systemd (EL9 host install)
+Full docs at **<https://fjacquet.github.io/pflex_exporter/>**:
 
-For a non-container deployment on Enterprise Linux 9 (the platform Dell's monitoring
-targets), install the unit in `deploy/`:
+- [Installation](https://fjacquet.github.io/pflex_exporter/getting-started/installation/) ·
+  [Configuration](https://fjacquet.github.io/pflex_exporter/getting-started/configuration/) ·
+  [Quick Start](https://fjacquet.github.io/pflex_exporter/getting-started/quickstart/)
+- [Metrics Reference](https://fjacquet.github.io/pflex_exporter/metrics/)
+- Deployment:
+  [Docker](https://fjacquet.github.io/pflex_exporter/deployment/docker/) ·
+  [systemd](https://fjacquet.github.io/pflex_exporter/deployment/systemd/) ·
+  [Kubernetes](https://fjacquet.github.io/pflex_exporter/deployment/kubernetes/)
+- [Dashboards](https://fjacquet.github.io/pflex_exporter/dashboards/) ·
+  [OpenTelemetry](https://fjacquet.github.io/pflex_exporter/opentelemetry/) ·
+  [CI/CD & SBOM](https://fjacquet.github.io/pflex_exporter/cicd/)
 
-```bash
-# binary + config + secrets
-sudo useradd --system --no-create-home --shell /usr/sbin/nologin pflex
-sudo install -m 0755 bin/pflex_exporter /usr/local/bin/pflex_exporter
-sudo install -d -o root -g pflex -m 0750 /etc/pflex_exporter
-sudo install -m 0640 -o root -g pflex config.yaml /etc/pflex_exporter/config.yaml
-sudo install -m 0600 -o root -g pflex deploy/pflex_exporter.env.example /etc/pflex_exporter/pflex_exporter.env
-# edit the secret(s) in /etc/pflex_exporter/pflex_exporter.env
-
-# service (logs to the journal; set `logName: ""` in config.yaml)
-sudo install -m 0644 deploy/pflex_exporter.service /etc/systemd/system/pflex_exporter.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now pflex_exporter
-
-journalctl -u pflex_exporter -f          # view logs
-sudo systemctl reload pflex_exporter     # live config reload (sends SIGHUP)
-```
-
-The unit runs as an unprivileged `pflex` user with a hardened sandbox
-(`ProtectSystem=strict`, `NoNewPrivileges`, etc.) and maps `systemctl reload` to the
-exporter's SIGHUP config reload.
-
-### Kubernetes
-
-Manifests live in `deploy/kubernetes/` (ConfigMap, Secret, Deployment, Service, and an
-optional Prometheus-Operator ServiceMonitor), wired together with kustomize:
-
-```bash
-# edit deploy/kubernetes/configmap.yaml (clusters) and secret.example.yaml (passwords)
-kubectl apply -k deploy/kubernetes/
-```
-
-The Deployment runs a single replica (the collector is a singleton — a second replica
-would double-poll every cluster, as there's no leader election), as a non-root user with
-`readOnlyRootFilesystem`, dropped capabilities, and `RuntimeDefault` seccomp. The
-liveness probe hits `/metrics` (process health) and readiness hits `/health` (ready once
-at least one cluster is collected). Uncomment the ServiceMonitor in `kustomization.yaml`
-if you run the Prometheus Operator.
-
-## Metric naming
-
-- Names are `pflex_<object>_<metric>`: `pflex_cluster_*`, `pflex_sds_*`, `pflex_sdc_*`,
-  `pflex_volume_*`, `pflex_storagepool_*`, `pflex_device_*`, `pflex_protectiondomain_*`.
-- Bandwidth/IO accumulators (`*Bwc`) become three gauges with `op` and `direction` labels:
-  `_iops`, `_bandwidth_kb_per_second`, `_io_size_kb`. Latency accumulators become `_latency`.
-- Other statistics become scalar gauges named from the API field, e.g.
-  `pflex_cluster_max_capacity_in_kb`, `pflex_storagepool_spare_capacity_in_kb`.
-- Health/meta: `pflex_up{cluster}`, `pflex_last_scrape_timestamp_seconds{cluster}`,
-  `pflex_cluster_generation{cluster,generation}`.
-
-**IOPS and bandwidth are already per-second gauges** (derived from the API's counters).
-In PromQL, aggregate them with `sum`/`avg` — **never** `rate()`.
-
-## Dashboards
-
-`grafana/` contains importable PromQL dashboards: `pflex-cluster-overview.json` and
-`pflex-storage-pools.json`. They demonstrate the metric/label conventions; additional
-per-object dashboards (devices, volumes, SDC, SDS, protection domains, capacity planning)
-can be built mechanically from the same naming scheme.
+Deployment manifests and examples live in [`deploy/`](deploy/); Grafana dashboards in
+[`grafana/`](grafana/).
 
 ## Development
 
 ```bash
 make tools         # install golangci-lint, cyclonedx-gomod, govulncheck (pinned)
 make sure          # fmt + vet + test + build + golangci-lint
-make test-coverage # race tests + HTML coverage report
+make ci            # the gate CI runs (adds go test -race + govulncheck)
 ```
-
-## CI/CD & SBOM
-
-Everything CI runs is a Makefile target, so it reproduces locally.
-
-- **CI** (`.github/workflows/ci.yml`, on push/PR) runs `make ci` —
-  `gofmt` check, `go vet`, `golangci-lint`, `go test -race` with coverage, and
-  `govulncheck` — plus a Semgrep scan and an SBOM artifact.
-- **Release** (`.github/workflows/release.yml`, on `v*` tags):
-  - `make release` cross-compiles `linux/{amd64,arm64}` and `darwin/{amd64,arm64}`
-    binaries, generates the SBOM, and writes `checksums.txt`; all are attached to the
-    GitHub Release.
-  - A multi-arch container image is pushed to `ghcr.io/<owner>/pflex_exporter` with
-    build-time **SBOM and provenance attestations**.
-- **SBOM**: `make sbom` produces a CycloneDX SBOM (`dist/sbom.cdx.json`) for the Go
-  module via `cyclonedx-gomod`; the container image carries its own SBOM attestation.
-- **Version**: injected at build time via `-ldflags "-X main.version=$(VERSION)"`
-  (`VERSION` defaults to `git describe`); check with `pflex_exporter --version`.
 
 ## Notes
 
-- Supported baseline is **PowerFlex 4.5+** (Gen1). Auth uses the 4.x bearer flow
-  (`/rest/auth/login`, `/rest/auth/update-token`); older firmware that only offers Basic
-  auth is out of scope.
-- The PowerFlex API spells the occurrence counter `numOccured`; the exporter also accepts
-  the corrected `numOccurred`.
+- Supported baseline is **PowerFlex 4.5+** (Gen1), using the 4.x bearer auth flow.
+- IOPS and bandwidth are already per-second gauges — aggregate with `sum`/`avg` in PromQL, never `rate()`.
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE). This matches the license of Dell's upstream
-PowerFlex Gen1 monitoring tooling that this exporter is derived from.
+Apache License 2.0 — see [LICENSE](LICENSE). Matches Dell's upstream PowerFlex Gen1
+monitoring tooling that this exporter is derived from.
