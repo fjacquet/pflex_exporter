@@ -1,0 +1,52 @@
+{
+  "System": {
+    "id": "clu1",
+    "name": "cluster-one",
+    "links": []
+  },
+  "protectionDomainList": [
+    { "id": "pd1", "name": "pd-1", "links": [] }
+  ],
+  "storagePoolList": [
+    {
+      "id": "sp1",
+      "name": "pool-1",
+      "dataLayout": "MediumGranularity",
+      "links": [
+        { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
+      ]
+    }
+  ],
+  "sdsList": [
+    {
+      "id": "sds1",
+      "name": "sds-1",
+      "links": [
+        { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
+      ]
+    }
+  ],
+  "deviceList": [
+    {
+      "id": "dev1",
+      "name": "device-1",
+      "deviceCurrentPathName": "/dev/sdb",
+      "links": [
+        { "rel": "/api/parent/relationship/sdsId", "href": "/api/instances/Sds::sds1" },
+        { "rel": "/api/parent/relationship/storagePoolId", "href": "/api/instances/StoragePool::sp1" }
+      ]
+    }
+  ],
+  "volumeList": [
+    {
+      "id": "vol1",
+      "name": "volume-1",
+      "links": [
+        { "rel": "/api/parent/relationship/storagePoolId", "href": "/api/instances/StoragePool::sp1" }
+      ]
+    }
+  ],
+  "sdcList": [
+    { "id": "sdc1", "name": null, "sdcIp": "10.0.0.5", "links": [] }
+  ]
+}

@@ -1,0 +1,6 @@
+/bin/
+/log/
+coverage.out
+coverage.html
+clusters.yaml
+*.local.yaml

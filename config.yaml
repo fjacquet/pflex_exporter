@@ -1,0 +1,43 @@
+---
+# PowerFlex exporter configuration.
+# One exporter process monitors many PowerFlex Gen1 clusters and exposes their
+# metrics via a Prometheus /metrics endpoint and (optionally) an OTLP metric push.
+
+server:
+  host: "0.0.0.0"
+  port: "2112"
+  uri: "/metrics"
+  logName: "log/pflex-exporter.log" # empty -> stdout only
+
+collection:
+  interval: "10s" # how often the background loop polls every cluster
+  timeout: "8s"   # per-cluster collection timeout
+
+opentelemetry:
+  # OTLP metric push (OpenTelemetry-first). Metrics are pushed to a collector/backend.
+  metrics:
+    enabled: false
+    endpoint: "localhost:4317"
+    insecure: true
+    interval: "10s"
+  # Optional distributed tracing for diagnosing slow collection cycles.
+  tracing:
+    enabled: false
+    endpoint: "localhost:4317"
+    insecure: true
+    samplingRate: 0.1
+
+# PowerFlex Gen1 clusters to monitor. A 'monitor'-type user is sufficient.
+# For PowerFlex 4.0+, 'gateway' is the primary ingress IP (PowerFlex Manager UI).
+# Passwords support ${ENV_VAR} interpolation or a passwordFile reference.
+clusters:
+  - name: flex-cluster1
+    gateway: flex-clu1-gw01
+    username: flex-username
+    password: "${FLEX1_PASSWORD}"
+    insecureSkipVerify: true
+#  - name: flex-cluster2
+#    gateway: flex-clu2-gw01
+#    username: flex-username
+#    passwordFile: /etc/pflex_exporter/flex2.pass
+#    insecureSkipVerify: true

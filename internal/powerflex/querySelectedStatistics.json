@@ -1,0 +1,167 @@
+{
+  "selectedStatisticsList": [
+    {
+      "type": "System",
+      "allIds": "",
+      "properties": [
+        "maxCapacityInKb",
+        "capacityLimitInKb",
+        "capacityInUseInKb",
+        "netCapacityInUseInKb",
+        "unusedCapacityInKb",
+        "netUnusedCapacityInKb",
+        "degradedFailedCapacityInKb",
+        "failedCapacityInKb",
+        "volumeAllocationLimitInKb",
+        "capacityAvailableForVolumeAllocationInKb",
+        "snapshotCapacityInKb",
+        "netSnapshotCapacityInKb",
+        "netProvisionedAddressesInKb",
+        "spareCapacityInKb",
+        "thinUserDataCapacityInKb",
+        "netThinUserDataCapacityInKb",
+        "thinCapacityAllocatedInKb",
+        "thickCapacityInUseInKb",
+        "netFglSparesInKb",
+        "netMetadataOverheadInKb",
+        "netCapacityInUseNoOverheadInKb",
+        "compressionRatio",
+        "netFglUncompressedDataSizeInKb",
+        "netFglCompressedDataSizeInKb",
+        "netFglUserDataCapacityInKb",
+        "compressedDataCompressionRatio",
+        "netMgUserDataCapacityInKb",
+        "primaryReadBwc",
+        "primaryWriteBwc",
+        "totalReadBwc",
+        "totalWriteBwc",
+        "fwdRebuildReadBwc",
+        "fwdRebuildWriteBwc",
+        "bckRebuildReadBwc",
+        "bckRebuildWriteBwc",
+        "rebalanceReadBwc",
+        "rebalanceWriteBwc",
+        "userDataSdcReadLatency",
+        "userDataSdcWriteLatency",
+        "normRebuildReadBwc",
+        "normRebuildWriteBwc",
+        "volMigrationReadBwc",
+        "volMigrationWriteBwc"
+      ]
+    },
+    {
+      "type": "Sds",
+      "allIds": "",
+      "properties": [
+        "primaryReadBwc",
+        "primaryWriteBwc",
+        "totalReadBwc",
+        "totalWriteBwc"
+      ]
+    },
+    {
+      "type": "Sdc",
+      "allIds": "",
+      "properties": [
+        "numOfMappedVolumes",
+        "userDataReadBwc",
+        "userDataWriteBwc"
+      ]
+    },
+    {
+      "type": "Volume",
+      "allIds": "",
+      "properties": [
+        "userDataReadBwc",
+        "userDataWriteBwc",
+        "userDataSdcReadLatency",
+        "userDataSdcWriteLatency"
+      ]
+    },
+    {
+      "type": "StoragePool",
+      "allIds": "",
+      "properties": [
+        "maxCapacityInKb",
+        "capacityInUseInKb",
+        "degradedFailedCapacityInKb",
+        "failedCapacityInKb",
+        "unusedCapacityInKb",
+        "netUnusedCapacityInKb",
+        "spareCapacityInKb",
+        "thinCapacityAllocatedInKb",
+        "netThinUserDataCapacityInKb",
+        "thickCapacityInUseInKb",
+        "volumeAllocationLimitInKb",
+        "capacityAvailableForVolumeAllocationInKb",
+        "netTrimmedUserDataCapacityInKb",
+        "netSnapshotCapacityInKb",
+        "userDataSdcReadLatency",
+        "userDataSdcWriteLatency",
+        "primaryReadBwc",
+        "primaryWriteBwc",
+        "totalReadBwc",
+        "totalWriteBwc",
+        "fwdRebuildReadBwc",
+        "fwdRebuildWriteBwc",
+        "bckRebuildReadBwc",
+        "bckRebuildWriteBwc",
+        "rebalanceReadBwc",
+        "rebalanceWriteBwc",
+        "volMigrationReadBwc",
+        "volMigrationWriteBwc",
+        "compressionRatio",
+        "netFglUncompressedDataSizeInKb",
+        "netFglCompressedDataSizeInKb",
+        "netFglUserDataCapacityInKb",
+        "netMgUserDataCapacityInKb",
+        "compressedDataCompressionRatio",
+        "netFglSparesInKb",
+        "netMetadataOverheadInKb",
+        "netCapacityInUseNoOverheadInKb",
+        "netUserDataCapacityInKb"
+      ]
+    },
+    {
+      "type": "Device",
+      "allIds": "",
+      "properties": [
+        "avgReadSizeInBytes",
+        "avgWriteSizeInBytes",
+        "avgReadLatencyInMicrosec",
+        "avgWriteLatencyInMicrosec",
+        "primaryReadBwc",
+        "primaryWriteBwc",
+        "totalReadBwc",
+        "totalWriteBwc"
+      ]
+    },
+    {
+      "type": "ProtectionDomain",
+      "allIds": "",
+      "properties": [
+        "maxCapacityInKb",
+        "capacityInUseInKb",
+        "degradedFailedCapacityInKb",
+        "failedCapacityInKb",
+        "unusedCapacityInKb",
+        "spareCapacityInKb",
+        "thinCapacityAllocatedInKb",
+        "thickCapacityInUseInKb",
+        "capacityAvailableForVolumeAllocationInKb",
+        "primaryReadBwc",
+        "primaryWriteBwc",
+        "totalReadBwc",
+        "totalWriteBwc",
+        "fwdRebuildReadBwc",
+        "fwdRebuildWriteBwc",
+        "bckRebuildReadBwc",
+        "bckRebuildWriteBwc",
+        "rebalanceReadBwc",
+        "rebalanceWriteBwc",
+        "volMigrationReadBwc",
+        "volMigrationWriteBwc"
+      ]
+    }
+  ]
+}

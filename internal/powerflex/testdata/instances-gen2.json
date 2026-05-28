@@ -1,0 +1,29 @@
+{
+  "System": {
+    "id": "clu2",
+    "name": "cluster-two",
+    "links": []
+  },
+  "protectionDomainList": [
+    { "id": "pd1", "name": "pd-1", "links": [] }
+  ],
+  "storagePoolList": [
+    {
+      "id": "sp1",
+      "name": "pool-1",
+      "dataLayout": "ErasureCoding",
+      "links": [
+        { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
+      ]
+    }
+  ],
+  "volumeList": [
+    {
+      "id": "vol1",
+      "name": "volume-1",
+      "links": [
+        { "rel": "/api/parent/relationship/storagePoolId", "href": "/api/instances/StoragePool::sp1" }
+      ]
+    }
+  ]
+}

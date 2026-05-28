@@ -1,0 +1,52 @@
+{
+  "System": {
+    "maxCapacityInKb": 1000000,
+    "capacityInUseInKb": 400000,
+    "unusedCapacityInKb": 600000,
+    "compressionRatio": 1.5,
+    "primaryReadBwc": { "numOccured": 100, "numSeconds": 10, "totalWeightInKb": 2000 },
+    "primaryWriteBwc": { "numOccured": 50, "numSeconds": 10, "totalWeightInKb": 1000 },
+    "userDataSdcReadLatency": { "numOccured": 100, "numSeconds": 10, "totalWeightInKb": 300 }
+  },
+  "ProtectionDomain": {
+    "pd1": {
+      "maxCapacityInKb": 1000000,
+      "capacityInUseInKb": 400000,
+      "primaryReadBwc": { "numOccured": 100, "numSeconds": 10, "totalWeightInKb": 2000 }
+    }
+  },
+  "StoragePool": {
+    "sp1": {
+      "maxCapacityInKb": 1000000,
+      "capacityInUseInKb": 400000,
+      "spareCapacityInKb": 100000,
+      "primaryReadBwc": { "numOccured": 100, "numSeconds": 10, "totalWeightInKb": 2000 }
+    }
+  },
+  "Sds": {
+    "sds1": {
+      "primaryReadBwc": { "numOccured": 80, "numSeconds": 10, "totalWeightInKb": 1600 },
+      "totalWriteBwc": { "numOccured": 40, "numSeconds": 10, "totalWeightInKb": 800 }
+    }
+  },
+  "Device": {
+    "dev1": {
+      "avgReadSizeInBytes": 4096,
+      "avgReadLatencyInMicrosec": 250,
+      "primaryReadBwc": { "numOccured": 80, "numSeconds": 10, "totalWeightInKb": 1600 }
+    }
+  },
+  "Volume": {
+    "vol1": {
+      "userDataReadBwc": { "numOccured": 60, "numSeconds": 10, "totalWeightInKb": 1200 },
+      "userDataWriteBwc": { "numOccured": 30, "numSeconds": 10, "totalWeightInKb": 600 },
+      "userDataSdcReadLatency": { "numOccured": 60, "numSeconds": 10, "totalWeightInKb": 180 }
+    }
+  },
+  "Sdc": {
+    "sdc1": {
+      "numOfMappedVolumes": 3,
+      "userDataReadBwc": { "numOccured": 60, "numSeconds": 10, "totalWeightInKb": 1200 }
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "title": "PowerFlex - Storage Pools",
+  "uid": "pflex-storage-pools",
+  "tags": ["powerflex", "pflex_exporter"],
+  "schemaVersion": 39,
+  "version": 1,
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 },
+      {
+        "name": "cluster",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(pflex_up, cluster)",
+        "refresh": 2, "includeAll": true, "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "pool",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(pflex_storagepool_max_capacity_in_kb{cluster=~\"$cluster\"}, storage_pool_name)",
+        "refresh": 2, "includeAll": true, "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Pool Capacity Used %",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * pflex_storagepool_capacity_in_use_in_kb{cluster=~\"$cluster\", storage_pool_name=~\"$pool\"} / pflex_storagepool_max_capacity_in_kb{cluster=~\"$cluster\", storage_pool_name=~\"$pool\"}",
+          "legendFormat": "{{cluster}}/{{storage_pool_name}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Pool Spare Capacity",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "deckbytes" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "pflex_storagepool_spare_capacity_in_kb{cluster=~\"$cluster\", storage_pool_name=~\"$pool\"}", "legendFormat": "{{cluster}}/{{storage_pool_name}}" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Pool IOPS (total)",
+      "type": "timeseries",
+      "description": "Pre-derived per-second gauge; aggregate with sum, never rate().",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "iops" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "sum by (storage_pool_name, direction) (pflex_storagepool_iops{cluster=~\"$cluster\", storage_pool_name=~\"$pool\", op=\"total\"})", "legendFormat": "{{storage_pool_name}} {{direction}}" }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Pool Bandwidth (KB/s, total)",
+      "type": "timeseries",
+      "description": "Pre-derived per-second gauge (KB/s); aggregate with sum, never rate().",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "KBs" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "sum by (storage_pool_name, direction) (pflex_storagepool_bandwidth_kb_per_second{cluster=~\"$cluster\", storage_pool_name=~\"$pool\", op=\"total\"})", "legendFormat": "{{storage_pool_name}} {{direction}}" }
+      ]
+    }
+  ]
+}
