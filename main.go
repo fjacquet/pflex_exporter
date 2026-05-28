@@ -1,5 +1,5 @@
-// PowerFlex Exporter collects metrics from Dell PowerFlex Gen1 clusters and exposes
-// them via a Prometheus /metrics endpoint and an optional OTLP metric push.
+// PowerFlex Exporter collects metrics from Dell PowerFlex clusters (Gen1 and Gen2) and
+// exposes them via a Prometheus /metrics endpoint and an optional OTLP metric push.
 //
 // Usage:
 //
@@ -358,7 +358,7 @@ func main() {
 		Use:     programName,
 		Version: version,
 		Short:   "Prometheus/OTLP exporter for Dell PowerFlex Gen1",
-		Long:    "PowerFlex Exporter collects metrics from PowerFlex Gen1 clusters and exposes them via Prometheus and OTLP.",
+		Long:    "PowerFlex Exporter collects metrics from PowerFlex clusters (Gen1 and Gen2, auto-detected) and exposes them via Prometheus and OTLP.",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			cfg, err := validateConfig(configFile)
 			if err != nil {

@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- A reachable PowerFlex **4.5+** Gen1 cluster gateway (primary ingress IP for 4.x).
+- A reachable PowerFlex cluster gateway — **Gen1 4.5+** or **Gen2 5.x+** (primary ingress IP for 4.x+).
 - A PowerFlex user with **monitor** privileges (read-only is sufficient).
 - One of: Go 1.25+ toolchain (build from source), Docker, or a Kubernetes cluster.
 

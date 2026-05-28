@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// ClusterConfig holds the connection details for a single PowerFlex Gen1 cluster.
+// ClusterConfig holds the connection details for a single PowerFlex cluster (Gen1 or Gen2).
 // One exporter process monitors many clusters; the Name becomes the `cluster` label
 // on every metric emitted for this cluster.
 type ClusterConfig struct {

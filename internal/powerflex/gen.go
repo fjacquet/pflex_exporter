@@ -9,9 +9,9 @@ const (
 	GenerationUnknown = "unknown"
 )
 
-// detectGeneration classifies a cluster by inspecting storage pool data layouts,
-// mirroring Dell's Gen1 check: FineGranularity/MediumGranularity pools indicate Gen1
-// (mirroring), ErasureCoding indicates Gen2. This exporter targets Gen1 only.
+// detectGeneration classifies a cluster by inspecting storage pool data layouts:
+// FineGranularity/MediumGranularity pools indicate Gen1 (mirroring), ErasureCoding
+// indicates Gen2. The collector uses the result to pick the matching collection path.
 func detectGeneration(in *models.Instances) string {
 	pools := in.Get(models.TypeStoragePool)
 	if len(pools) == 0 {
