@@ -1,0 +1,14 @@
+# Grafana dashboard provisioning for the docker-compose test stack.
+# Loads the bundled PowerFlex dashboards from disk; the gen1/ and gen2/
+# subdirectories become Grafana folders (foldersFromFilesStructure).
+apiVersion: 1
+
+providers:
+  - name: PowerFlex
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true

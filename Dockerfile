@@ -15,7 +15,9 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o pflex_exporter .
 FROM alpine:latest
 
 RUN apk --no-cache add ca-certificates && \
-    adduser -D -u 10001 pflex
+    adduser -D -u 10001 pflex && \
+    mkdir -p /var/log/pflex_exporter && \
+    chown pflex:pflex /var/log/pflex_exporter
 
 COPY --from=builder /app/pflex_exporter /usr/bin/pflex_exporter
 COPY config.yaml /etc/pflex_exporter/config.yaml

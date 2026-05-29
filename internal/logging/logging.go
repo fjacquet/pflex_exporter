@@ -26,6 +26,12 @@ func LogError(msg string) {
 
 // PrepareLogs configures logging to write JSON to both stdout and a log file.
 // If logName is empty, logs go to stdout only.
+//
+// If the log file cannot be created (e.g. an unwritable path or a read-only
+// root filesystem in a container), logging degrades to stdout-only with a
+// warning rather than aborting the process: stdout already carries every line
+// via the MultiWriter, so the only thing lost is the on-disk copy. This keeps
+// the exporter running in restricted environments instead of crash-looping.
 func PrepareLogs(logName string) error {
 	log.SetFormatter(&log.JSONFormatter{})
 
@@ -36,13 +42,17 @@ func PrepareLogs(logName string) error {
 
 	if dir := filepath.Dir(logName); dir != "." && dir != "" {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return fmt.Errorf("failed to create log directory: %w", err)
+			log.SetOutput(os.Stdout)
+			LogError(fmt.Sprintf("log directory %q is not writable, logging to stdout only: %v", dir, err))
+			return nil
 		}
 	}
 
 	logFile, err := os.OpenFile(logName, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0o644)
 	if err != nil {
-		return fmt.Errorf("failed to open log file: %w", err)
+		log.SetOutput(os.Stdout)
+		LogError(fmt.Sprintf("log file %q is not writable, logging to stdout only: %v", logName, err))
+		return nil
 	}
 	log.SetOutput(io.MultiWriter(os.Stdout, logFile))
 	return nil

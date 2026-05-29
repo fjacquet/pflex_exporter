@@ -7,7 +7,10 @@ server:
   host: "0.0.0.0"
   port: "2112"
   uri: "/metrics"
-  logName: "log/pflex-exporter.log" # empty -> stdout only
+  # Absolute path so it resolves the same in containers and under systemd.
+  # Empty string -> stdout only (recommended for k8s/systemd, captured by the runtime).
+  # If the path isn't writable, logging falls back to stdout with a warning.
+  logName: "/var/log/pflex_exporter/pflex-exporter.log"
 
 collection:
   interval: "10s" # how often the background loop polls every cluster

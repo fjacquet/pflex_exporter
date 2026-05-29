@@ -1,0 +1,3 @@
+# Intentionally empty. Grafana scans this directory for plugin provisioning;
+# keeping it present silences the startup "no such file or directory" error
+# when ./grafana/provisioning is bind-mounted over the image default.

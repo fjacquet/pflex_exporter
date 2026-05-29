@@ -2,11 +2,16 @@ services:
   pflex_exporter:
     build: .
     image: pflex_exporter
+    # Build-only image (no registry). Without this, `docker compose pull`/`up`
+    # tries to pull `pflex_exporter` from Docker Hub and fails with access-denied.
+    pull_policy: build
     container_name: pflex_exporter
     ports:
       - "2112:2112"
     volumes:
       - ./config.yaml:/etc/pflex_exporter/config.yaml:ro
+      # Persist the log file (config.yaml -> logName). Owned by uid 10001 via the image.
+      - pflex_logs:/var/log/pflex_exporter
     environment:
       # Provide cluster secrets via the environment (referenced as ${FLEX1_PASSWORD}).
       - FLEX1_PASSWORD=${FLEX1_PASSWORD:-}
@@ -21,6 +26,27 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
     depends_on:
       - pflex_exporter
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pflex_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      # Test-stack credentials (admin / admin). Change for anything non-local.
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      # Datasource + dashboard providers (auto-provisioned on startup).
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      # Bundled dashboards; gen1/ and gen2/ become Grafana folders.
+      - ./grafana/gen1:/var/lib/grafana/dashboards/gen1:ro
+      - ./grafana/gen2:/var/lib/grafana/dashboards/gen2:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
 
   # Optional: receives the OTLP metric push when opentelemetry.metrics is enabled.
   otel-collector:
@@ -32,3 +58,6 @@ services:
     ports:
       - "4317:4317" # OTLP gRPC
       - "8889:8889" # collector-exposed Prometheus metrics
+
+volumes:
+  pflex_logs:
