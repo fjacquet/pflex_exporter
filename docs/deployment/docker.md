@@ -5,7 +5,7 @@
 Multi-arch images are published to GHCR with SBOM and provenance attestations:
 
 ```bash
-docker pull ghcr.io/fjacquet/pflex_exporter:0.1.0   # or :latest
+docker pull ghcr.io/fjacquet/pflex_exporter:0.3.0   # or :latest
 ```
 
 ## Run
@@ -18,7 +18,7 @@ docker run -d --name pflex_exporter \
   -p 2112:2112 \
   -e FLEX1_PASSWORD='your-monitor-password' \
   -v "$PWD/config.yaml:/etc/pflex_exporter/config.yaml:ro" \
-  ghcr.io/fjacquet/pflex_exporter:0.1.0
+  ghcr.io/fjacquet/pflex_exporter:0.3.0
 ```
 
 The image runs as a non-root user (`uid 10001`) and the binary embeds the statistics
