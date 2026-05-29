@@ -35,7 +35,7 @@ Multi-arch images (`linux/amd64`, `linux/arm64`) are published to GHCR with SBOM
 provenance attestations:
 
 ```bash
-docker pull ghcr.io/fjacquet/pflex_exporter:0.1.0   # or :latest
+docker pull ghcr.io/fjacquet/pflex_exporter:0.3.0   # or :latest
 ```
 
 ## Next steps
