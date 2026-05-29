@@ -1,0 +1,67 @@
+# Pull-based stack: runs the published GHCR image instead of building locally.
+#
+#   FLEX1_PASSWORD='your-monitor-password' docker compose -f docker-compose.ghcr.yml up -d
+#
+# Pin a version with PFLEX_TAG (defaults to :latest):
+#   PFLEX_TAG=0.2.1 FLEX1_PASSWORD='...' docker compose -f docker-compose.ghcr.yml up -d
+#
+# Refresh images later with:  docker compose -f docker-compose.ghcr.yml pull
+services:
+  pflex_exporter:
+    image: ghcr.io/fjacquet/pflex_exporter:${PFLEX_TAG:-latest}
+    container_name: pflex_exporter
+    ports:
+      - "2112:2112"
+    volumes:
+      - ./config.yaml:/etc/pflex_exporter/config.yaml:ro
+      # Persist the log file (config.yaml -> logName). Owned by uid 10001 via the image.
+      - pflex_logs:/var/log/pflex_exporter
+    environment:
+      # Provide cluster secrets via the environment (referenced as ${FLEX1_PASSWORD}).
+      - FLEX1_PASSWORD=${FLEX1_PASSWORD:-}
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pflex_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - pflex_exporter
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pflex_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      # Test-stack credentials (admin / admin). Change for anything non-local.
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      # Datasource + dashboard providers (auto-provisioned on startup).
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      # Bundled dashboards; gen1/ and gen2/ become Grafana folders.
+      - ./grafana/gen1:/var/lib/grafana/dashboards/gen1:ro
+      - ./grafana/gen2:/var/lib/grafana/dashboards/gen2:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # Optional: receives the OTLP metric push when opentelemetry.metrics is enabled.
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: pflex_otel_collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "8889:8889" # collector-exposed Prometheus metrics
+
+volumes:
+  pflex_logs:

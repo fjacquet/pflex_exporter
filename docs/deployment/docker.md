@@ -37,10 +37,23 @@ crashing. Set `logName: ""` to disable the file entirely.
 ## Compose stack
 
 `docker-compose.yml` brings up the exporter together with Prometheus, Grafana (with the
-bundled dashboards auto-provisioned), and an OpenTelemetry Collector:
+bundled dashboards auto-provisioned), and an OpenTelemetry Collector. It **builds** the
+exporter image locally:
 
 ```bash
 FLEX1_PASSWORD='your-monitor-password' docker compose up --build
+```
+
+If you'd rather run the **published** image instead of building, use
+`docker-compose.ghcr.yml` — same stack, but the exporter is pulled from GHCR:
+
+```bash
+# :latest
+FLEX1_PASSWORD='your-monitor-password' docker compose -f docker-compose.ghcr.yml up -d
+# pin a version
+PFLEX_TAG=0.2.1 FLEX1_PASSWORD='...' docker compose -f docker-compose.ghcr.yml up -d
+# refresh images later
+docker compose -f docker-compose.ghcr.yml pull
 ```
 
 | Service | Port | Purpose |
