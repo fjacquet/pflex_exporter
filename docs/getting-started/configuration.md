@@ -7,7 +7,7 @@ server:
   host: "0.0.0.0"
   port: "2112"
   uri: "/metrics"
-  logName: "log/pflex-exporter.log" # empty -> stdout only (recommended under systemd/k8s)
+  logName: "/var/log/pflex_exporter/pflex-exporter.log" # absolute; "" -> stdout only (recommended under systemd/k8s)
 
 collection:
   interval: "10s" # how often the background loop polls every cluster
@@ -38,7 +38,7 @@ clusters:
 | Section | Key | Notes |
 |---|---|---|
 | `server` | `host`, `port`, `uri` | HTTP bind address and Prometheus metrics path. |
-| `server` | `logName` | Log file path; empty string logs to stdout (use this under systemd/k8s). |
+| `server` | `logName` | Log file path (use an **absolute** path so it resolves the same in containers); empty string logs to stdout (recommended under systemd/k8s). If the path is not writable, logging falls back to stdout with a warning instead of failing to start. |
 | `collection` | `interval` | Background poll period for every cluster. Matches Prometheus scrape cadence well at `10s`–`30s`. |
 | `collection` | `timeout` | Per-cluster timeout; a slow/unreachable cluster fails fast without blocking others. |
 | `opentelemetry.metrics` | `enabled`, `endpoint`, `interval` | OTLP gRPC metric push. |
