@@ -27,6 +27,12 @@ type Link struct {
 	HRef string `json:"href"`
 }
 
+// MappedSdc is one entry of a Volume's mappedSdcInfo array: an SDC the volume is exposed to.
+type MappedSdc struct {
+	SdcID string `json:"sdcId"`
+	SdcIP string `json:"sdcIp"`
+}
+
 // Instance is a single PowerFlex object. Only the fields the exporter needs are modeled;
 // the rest of the API payload is ignored. Name may be null in the API (-> empty string),
 // in which case callers fall back to ID.
@@ -39,6 +45,14 @@ type Instance struct {
 	DataLayout            string `json:"dataLayout,omitempty"` // StoragePool: generation discriminator
 	VolumeType            string `json:"volumeType,omitempty"` // Gen2 Volume
 	MediaType             string `json:"mediaType,omitempty"`  // Gen2 DeviceGroup
+	// Operational state (SDS / StorageNode; SDC reuses MdmConnectionState).
+	MdmConnectionState string `json:"mdmConnectionState,omitempty"`
+	MembershipState    string `json:"membershipState,omitempty"`
+	MaintenanceState   string `json:"maintenanceState,omitempty"`
+	// Device operational state.
+	DeviceState string `json:"deviceState,omitempty"`
+	// Volume -> SDC mappings (which hosts the volume is exposed to).
+	MappedSdcInfo []MappedSdc `json:"mappedSdcInfo,omitempty"`
 }
 
 // DisplayName returns Name, or ID when Name is empty (mirrors Dell's fallback).
