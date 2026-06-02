@@ -1,6 +1,10 @@
 package powerflex
 
-import "testing"
+import (
+	"context"
+	"testing"
+	"time"
+)
 
 func TestSeverityOf(t *testing.T) {
 	cases := map[string]float64{
@@ -27,4 +31,28 @@ func TestSeverityOf(t *testing.T) {
 			t.Errorf("severityOf(%q) = %v, want %v", state, got, want)
 		}
 	}
+}
+
+func gen1Snapshot(t *testing.T) *Snapshot {
+	t.Helper()
+	g := newMockGateway(t) // default instances.json -> gen1
+	store := NewSnapshotStore()
+	c := NewCollector([]Client{g.clientNamed(t, "gen1-cluster")}, store, time.Second, 5*time.Second, nil)
+	c.CollectOnce(context.Background())
+	return store.Load()
+}
+
+func TestGen1StateSamples(t *testing.T) {
+	snap := gen1Snapshot(t)
+
+	assertSample(t, snap, "pflex_sds_health", map[string]string{"sds_id": "sds1"}, 0)
+	assertSample(t, snap, "pflex_device_health", map[string]string{"device_id": "dev1"}, 0)
+	assertSample(t, snap, "pflex_sdc_health", map[string]string{"sdc_id": "sdc1"}, 0)
+
+	assertSample(t, snap, "pflex_sds_info", map[string]string{"sds_id": "sds1"}, 1)
+	assertLabel(t, snap, "pflex_sds_info", map[string]string{"sds_id": "sds1"}, "mdm_connection_state", "Connected")
+	assertLabel(t, snap, "pflex_sds_info", map[string]string{"sds_id": "sds1"}, "membership_state", "Joined")
+	assertLabel(t, snap, "pflex_sds_info", map[string]string{"sds_id": "sds1"}, "maintenance_state", "NoMaintenance")
+	assertLabel(t, snap, "pflex_device_info", map[string]string{"device_id": "dev1"}, "device_state", "Normal")
+	assertLabel(t, snap, "pflex_sdc_info", map[string]string{"sdc_id": "sdc1"}, "mdm_connection_state", "Connected")
 }
