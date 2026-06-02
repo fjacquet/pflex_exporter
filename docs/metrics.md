@@ -110,7 +110,8 @@ unrecognized state maps to `2` (unknown), so a lost signal is surfaced rather th
 
 Expected state fields are present on PowerFlex 4.5+ (Gen1) and 5.x (Gen2). Alert on
 `pflex_<obj>_health > 0`; join to a host with `pflex_volume_mapped_sdc` (e.g.
-`pflex_volume_iops * on(volume_id) group_left(sdc_id) pflex_volume_mapped_sdc`).
+`pflex_volume_mapped_sdc * on(volume_id) group_left() pflex_volume_iops`, which yields one
+result per volume↔SDC pair carrying the volume's IOPS).
 
 An `unknown`-generation cluster (no recognizable storage-pool layout) reports
 `pflex_up=1` and `pflex_cluster_generation{generation="unknown"}=1` and falls back to the

@@ -71,6 +71,20 @@ func TestGen2StateSamples(t *testing.T) {
 	assertLabel(t, snap, "pflex_storagenode_info", map[string]string{"storage_node_id": "sn1"}, "membership_state", "Joined")
 }
 
+func TestStateHealthDegradedAndFailed(t *testing.T) {
+	g := newMockGateway(t)
+	g.instancesFixture = "instances-unhealthy.json"
+	store := NewSnapshotStore()
+	c := NewCollector([]Client{g.clientNamed(t, "unhealthy")}, store, time.Second, 5*time.Second, nil)
+	c.CollectOnce(context.Background())
+	snap := store.Load()
+
+	// mdm_connection_state=Disconnected -> severity 2; worst-of-N across the SDS's
+	// three state fields (Disconnected=2, Joined=0, NoMaintenance=0) must be 2.
+	assertSample(t, snap, "pflex_sds_health", map[string]string{"sds_id": "sds1"}, 2)
+	assertLabel(t, snap, "pflex_sds_info", map[string]string{"sds_id": "sds1"}, "mdm_connection_state", "Disconnected")
+}
+
 func TestVolumeMappedSdc(t *testing.T) {
 	// Gen1
 	snap1 := gen1Snapshot(t)
