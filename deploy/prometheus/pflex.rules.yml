@@ -1,0 +1,81 @@
+# Starter alert rules for pflex_exporter. Thresholds are tunable defaults.
+# NOTE: pflex_*_iops and *bandwidth* are already per-second gauges — aggregate with
+# sum()/avg(), never rate().
+groups:
+  - name: pflex-health
+    rules:
+      - alert: PflexSdsUnhealthy
+        expr: pflex_sds_health > 0 or pflex_storagenode_health > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PowerFlex storage server unhealthy ({{ $labels.cluster }})"
+          description: "SDS/StorageNode health={{ $value }} (1=degraded, 2=failed/disconnected). See pflex_sds_info / pflex_storagenode_info for the raw state."
+
+      - alert: PflexDeviceFailed
+        expr: pflex_device_health >= 2
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PowerFlex device failed/unknown ({{ $labels.cluster }})"
+          description: "Device {{ $labels.device_name }} health={{ $value }}. See pflex_device_info."
+
+      - alert: PflexSdcDisconnected
+        expr: pflex_sdc_health > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PowerFlex SDC disconnected ({{ $labels.cluster }})"
+          description: "SDC {{ $labels.sdc_name }} health={{ $value }}. See pflex_sdc_info."
+
+  - name: pflex-capacity
+    rules:
+      - alert: PflexStoragePoolCapacityHighGen1
+        expr: pflex_storagepool_capacity_in_use_in_kb / clamp_min(pflex_storagepool_max_capacity_in_kb, 1) > 0.85
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PowerFlex (Gen1) storage pool over 85% capacity ({{ $labels.cluster }})"
+          description: "Pool {{ $labels.storage_pool_name }} is {{ $value | humanizePercentage }} used."
+
+      - alert: PflexStoragePoolCapacityCriticalGen1
+        expr: pflex_storagepool_capacity_in_use_in_kb / clamp_min(pflex_storagepool_max_capacity_in_kb, 1) > 0.95
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PowerFlex (Gen1) storage pool over 95% capacity ({{ $labels.cluster }})"
+          description: "Pool {{ $labels.storage_pool_name }} is {{ $value | humanizePercentage }} used."
+
+      - alert: PflexStoragePoolCapacityHighGen2
+        expr: pflex_storagepool_utilization_ratio > 0.85
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PowerFlex (Gen2) storage pool over 85% utilization ({{ $labels.cluster }})"
+          description: "Pool {{ $labels.storage_pool_name }} utilization={{ $value | humanizePercentage }}."
+
+  - name: pflex-activity
+    rules:
+      - alert: PflexRebuildActive
+        expr: sum by (cluster, storage_pool_name) (pflex_storagepool_iops{op=~"fwdRebuild|bckRebuild|normRebuild|rebuild"}) > 0
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "PowerFlex rebuild in progress ({{ $labels.cluster }})"
+          description: "Rebuild IO active on pool {{ $labels.storage_pool_name }} for over 10m."
+
+      - alert: PflexVolumeReadLatencyHigh
+        expr: pflex_volume_latency{direction="read"} > 50 or pflex_volume_latency_microseconds{direction="read"} > 50000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PowerFlex volume read latency high ({{ $labels.cluster }})"
+          description: "Volume {{ $labels.volume_name }} read latency over threshold."

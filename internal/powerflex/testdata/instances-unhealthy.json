@@ -1,7 +1,7 @@
 {
   "System": {
-    "id": "clu2",
-    "name": "cluster-two",
+    "id": "clu1",
+    "name": "cluster-one",
     "links": []
   },
   "protectionDomainList": [
@@ -11,29 +11,19 @@
     {
       "id": "sp1",
       "name": "pool-1",
-      "dataLayout": "ErasureCoding",
+      "dataLayout": "MediumGranularity",
       "links": [
         { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
       ]
     }
   ],
-  "storageNodeList": [
+  "sdsList": [
     {
-      "id": "sn1",
-      "name": "node-1",
-      "mdmConnectionState": "Connected",
+      "id": "sds1",
+      "name": "sds-1",
+      "mdmConnectionState": "Disconnected",
       "membershipState": "Joined",
       "maintenanceState": "NoMaintenance",
-      "links": [
-        { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
-      ]
-    }
-  ],
-  "deviceGroupList": [
-    {
-      "id": "dg1",
-      "name": "dg-1",
-      "mediaType": "SSD",
       "links": [
         { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
       ]
@@ -46,7 +36,8 @@
       "deviceCurrentPathName": "/dev/sdb",
       "deviceState": "Normal",
       "links": [
-        { "rel": "/api/parent/relationship/storageNodeId", "href": "/api/instances/StorageNode::sn1" }
+        { "rel": "/api/parent/relationship/sdsId", "href": "/api/instances/Sds::sds1" },
+        { "rel": "/api/parent/relationship/storagePoolId", "href": "/api/instances/StoragePool::sp1" }
       ]
     }
   ],
@@ -54,23 +45,13 @@
     {
       "id": "vol1",
       "name": "volume-1",
-      "volumeType": "ThinProvisioned",
-      "mappedSdcInfo": [{ "sdcId": "sdc1", "sdcIp": "10.0.0.9" }],
+      "mappedSdcInfo": [{ "sdcId": "sdc1", "sdcIp": "10.0.0.5" }],
       "links": [
         { "rel": "/api/parent/relationship/storagePoolId", "href": "/api/instances/StoragePool::sp1" }
       ]
     }
   ],
   "sdcList": [
-    { "id": "sdc1", "name": null, "sdcIp": "10.0.0.9", "mdmConnectionState": "Connected", "links": [] }
-  ],
-  "sdtList": [
-    {
-      "id": "sdt1",
-      "name": "sdt-1",
-      "links": [
-        { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
-      ]
-    }
+    { "id": "sdc1", "name": null, "sdcIp": "10.0.0.5", "mdmConnectionState": "Connected", "links": [] }
   ]
 }

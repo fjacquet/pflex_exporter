@@ -24,6 +24,7 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/prometheus/pflex.rules.yml:/etc/prometheus/pflex.rules.yml:ro
     depends_on:
       - pflex_exporter
     restart: unless-stopped

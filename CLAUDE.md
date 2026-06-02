@@ -43,6 +43,7 @@ A Go exporter for **Dell PowerFlex (Gen1 and Gen2)** that exposes metrics via **
 
 - **Gen1:** add the stat name to `internal/powerflex/querySelectedStatistics.json` — derivation is automatic by suffix (`Bwc`/`Latency`/scalar). A new object type needs a label builder in `metrics.go` + an entry in `labelBuildersGen1` and `metricPrefix`.
 - **Gen2:** add an entry to the `v5Metrics` table in `statistics_v5.go` as `(kind, op, direction)`. A new type also needs `v5ResourceType`, a label builder, `labelBuildersGen2`, and `metricPrefix`.
+- **Operational state (both gens):** state/health metrics come from a second derivation path in `state.go` (`deriveStateSamples`), driven by *instance properties* rather than the statistics API. Add a state field to `models.Instance`, a `stateLabelsFn`, an `emitState` call, and a severity entry in `healthSeverity`. `pflex_volume_mapped_sdc` is emitted by `volumeMappingSamples` from `Volume.mappedSdcInfo`. Metrics emitted by both generations (Device, SDC, Volume) must reuse the union label builders.
 
 ## Testing
 

@@ -112,4 +112,22 @@ func TestMixedGenerationMetricsValid(t *testing.T) {
 	if _, ok := gatheredValue(mfs, "pflex_cluster_generation", map[string]string{"cluster": "g2", "generation": "gen2"}); !ok {
 		t.Error("expected gen2 generation metric")
 	}
+
+	// New state/mapping metrics emitted by BOTH generations must share consistent label
+	// keys, or reg.Gather() above would already have failed. Spot-check presence.
+	if _, ok := gatheredValue(mfs, "pflex_device_health", map[string]string{"cluster": "g1", "device_id": "dev1"}); !ok {
+		t.Error("expected gen1 device health")
+	}
+	if _, ok := gatheredValue(mfs, "pflex_device_health", map[string]string{"cluster": "g2", "device_id": "dev1"}); !ok {
+		t.Error("expected gen2 device health")
+	}
+	if _, ok := gatheredValue(mfs, "pflex_sdc_health", map[string]string{"cluster": "g1", "sdc_id": "sdc1"}); !ok {
+		t.Error("expected gen1 sdc health")
+	}
+	if _, ok := gatheredValue(mfs, "pflex_volume_mapped_sdc", map[string]string{"cluster": "g1", "volume_id": "vol1", "sdc_id": "sdc1"}); !ok {
+		t.Error("expected gen1 volume mapping")
+	}
+	if _, ok := gatheredValue(mfs, "pflex_volume_mapped_sdc", map[string]string{"cluster": "g2", "volume_id": "vol1", "sdc_id": "sdc1"}); !ok {
+		t.Error("expected gen2 volume mapping")
+	}
 }

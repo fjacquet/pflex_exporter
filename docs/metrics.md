@@ -97,6 +97,21 @@ explicit units and Gen2-specific labels:
 | `pflex_up` | `cluster` | `1` if the cluster was scraped successfully this cycle, else `0`. |
 | `pflex_last_scrape_timestamp_seconds` | `cluster` | Unix time of the last successful collection. |
 | `pflex_cluster_generation` | `cluster`, `generation` | Always `1`; the `generation` label is `gen1`, `gen2`, or `unknown`. |
+| `pflex_<obj>_health` | object identity/parent labels | Operational severity: `0`=healthy, `1`=degraded, `2`=failed/disconnected/unknown. Emitted for SDS/StorageNode, Device, SDC. |
+| `pflex_<obj>_info` | identity labels + raw state strings | Always `1`; carries raw PowerFlex state strings (`mdm_connection_state`, `membership_state`, `maintenance_state`, `device_state`). |
+| `pflex_volume_mapped_sdc` | volume identity/parent labels + `sdc_id`, `sdc_ip` | Always `1`; one series per volume→SDC mapping, correlating a volume with each host consuming it. |
+
+### Operational state
+
+State gauges are derived from object properties in `GET /api/instances` (not from the
+statistics API). The `*_health` value is the **worst severity** across the object's state
+fields; the matching `*_info` metric preserves the raw strings as labels. A missing or
+unrecognized state maps to `2` (unknown), so a lost signal is surfaced rather than hidden.
+
+Expected state fields are present on PowerFlex 4.5+ (Gen1) and 5.x (Gen2). Alert on
+`pflex_<obj>_health > 0`; join to a host with `pflex_volume_mapped_sdc` (e.g.
+`pflex_volume_mapped_sdc * on(volume_id) group_left() pflex_volume_iops`, which yields one
+result per volume↔SDC pair carrying the volume's IOPS).
 
 An `unknown`-generation cluster (no recognizable storage-pool layout) reports
 `pflex_up=1` and `pflex_cluster_generation{generation="unknown"}=1` and falls back to the

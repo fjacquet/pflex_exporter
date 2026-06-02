@@ -136,6 +136,7 @@ func buildSamplesGen1(clusterName string, in *models.Instances, rel *models.Rela
 			samples = append(samples, deriveSamples(prefix, labels, sm)...)
 		}
 	}
+	samples = append(samples, deriveStateSamples(clusterName, systemID, in, rel, GenerationGen1)...)
 	return samples
 }
 
@@ -168,6 +169,7 @@ func buildSamplesGen2(clusterName string, in *models.Instances, rel *models.Rela
 			samples = append(samples, deriveSamplesV5(prefix, labels, sm, mapping)...)
 		}
 	}
+	samples = append(samples, deriveStateSamples(clusterName, systemID, in, rel, GenerationGen2)...)
 	return samples
 }
 

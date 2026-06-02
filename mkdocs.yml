@@ -45,6 +45,7 @@ nav:
       - Configuration: getting-started/configuration.md
       - Quick Start: getting-started/quickstart.md
   - Metrics Reference: metrics.md
+  - Alerting: alerting.md
   - Deployment:
       - Docker: deployment/docker.md
       - systemd: deployment/systemd.md
