@@ -56,3 +56,17 @@ func TestGen1StateSamples(t *testing.T) {
 	assertLabel(t, snap, "pflex_device_info", map[string]string{"device_id": "dev1"}, "device_state", "Normal")
 	assertLabel(t, snap, "pflex_sdc_info", map[string]string{"sdc_id": "sdc1"}, "mdm_connection_state", "Connected")
 }
+
+func TestGen2StateSamples(t *testing.T) {
+	g := newMockGateway(t)
+	g.instancesFixture = "instances-gen2.json"
+	store := NewSnapshotStore()
+	c := NewCollector([]Client{g.clientNamed(t, "gen2-cluster")}, store, time.Second, 5*time.Second, nil)
+	c.CollectOnce(context.Background())
+	snap := store.Load()
+
+	assertSample(t, snap, "pflex_storagenode_health", map[string]string{"storage_node_id": "sn1"}, 0)
+	assertSample(t, snap, "pflex_device_health", map[string]string{"device_id": "dev1"}, 0)
+	assertSample(t, snap, "pflex_sdc_health", map[string]string{"sdc_id": "sdc1"}, 0)
+	assertLabel(t, snap, "pflex_storagenode_info", map[string]string{"storage_node_id": "sn1"}, "membership_state", "Joined")
+}

@@ -21,6 +21,9 @@
     {
       "id": "sn1",
       "name": "node-1",
+      "mdmConnectionState": "Connected",
+      "membershipState": "Joined",
+      "maintenanceState": "NoMaintenance",
       "links": [
         { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
       ]
@@ -41,6 +44,7 @@
       "id": "dev1",
       "name": "device-1",
       "deviceCurrentPathName": "/dev/sdb",
+      "deviceState": "Normal",
       "links": [
         { "rel": "/api/parent/relationship/storageNodeId", "href": "/api/instances/StorageNode::sn1" }
       ]
@@ -57,7 +61,7 @@
     }
   ],
   "sdcList": [
-    { "id": "sdc1", "name": null, "sdcIp": "10.0.0.9", "links": [] }
+    { "id": "sdc1", "name": null, "sdcIp": "10.0.0.9", "mdmConnectionState": "Connected", "links": [] }
   ],
   "sdtList": [
     {
