@@ -34,7 +34,7 @@ groups:
   - name: pflex-capacity
     rules:
       - alert: PflexStoragePoolCapacityHighGen1
-        expr: pflex_storagepool_capacity_in_use_in_kb / pflex_storagepool_max_capacity_in_kb > 0.85
+        expr: pflex_storagepool_capacity_in_use_in_kb / clamp_min(pflex_storagepool_max_capacity_in_kb, 1) > 0.85
         for: 15m
         labels:
           severity: warning
@@ -43,7 +43,7 @@ groups:
           description: "Pool {{ $labels.storage_pool_name }} is {{ $value | humanizePercentage }} used."
 
       - alert: PflexStoragePoolCapacityCriticalGen1
-        expr: pflex_storagepool_capacity_in_use_in_kb / pflex_storagepool_max_capacity_in_kb > 0.95
+        expr: pflex_storagepool_capacity_in_use_in_kb / clamp_min(pflex_storagepool_max_capacity_in_kb, 1) > 0.95
         for: 5m
         labels:
           severity: critical
