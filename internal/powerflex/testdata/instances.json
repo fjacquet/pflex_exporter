@@ -45,6 +45,7 @@
     {
       "id": "vol1",
       "name": "volume-1",
+      "mappedSdcInfo": [{ "sdcId": "sdc1", "sdcIp": "10.0.0.5" }],
       "links": [
         { "rel": "/api/parent/relationship/storagePoolId", "href": "/api/instances/StoragePool::sp1" }
       ]

@@ -70,3 +70,24 @@ func TestGen2StateSamples(t *testing.T) {
 	assertSample(t, snap, "pflex_sdc_health", map[string]string{"sdc_id": "sdc1"}, 0)
 	assertLabel(t, snap, "pflex_storagenode_info", map[string]string{"storage_node_id": "sn1"}, "membership_state", "Joined")
 }
+
+func TestVolumeMappedSdc(t *testing.T) {
+	// Gen1
+	snap1 := gen1Snapshot(t)
+	assertSample(t, snap1, "pflex_volume_mapped_sdc",
+		map[string]string{"volume_id": "vol1", "sdc_id": "sdc1"}, 1)
+	assertLabel(t, snap1, "pflex_volume_mapped_sdc",
+		map[string]string{"volume_id": "vol1", "sdc_id": "sdc1"}, "sdc_ip", "10.0.0.5")
+
+	// Gen2
+	g := newMockGateway(t)
+	g.instancesFixture = "instances-gen2.json"
+	store := NewSnapshotStore()
+	c := NewCollector([]Client{g.clientNamed(t, "gen2-cluster")}, store, time.Second, 5*time.Second, nil)
+	c.CollectOnce(context.Background())
+	snap2 := store.Load()
+	assertSample(t, snap2, "pflex_volume_mapped_sdc",
+		map[string]string{"volume_id": "vol1", "sdc_id": "sdc1"}, 1)
+	assertLabel(t, snap2, "pflex_volume_mapped_sdc",
+		map[string]string{"volume_id": "vol1", "sdc_id": "sdc1"}, "sdc_ip", "10.0.0.9")
+}

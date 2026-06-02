@@ -72,6 +72,32 @@ func deriveStateSamples(clusterName, systemID string, in *models.Instances, rel 
 	samples = append(samples, emitState(clusterName, systemID, in, rel, builders, nodeType, metricPrefix[nodeType], nodeStateLabels)...)
 	samples = append(samples, emitState(clusterName, systemID, in, rel, builders, models.TypeDevice, metricPrefix[models.TypeDevice], deviceStateLabels)...)
 	samples = append(samples, emitState(clusterName, systemID, in, rel, builders, models.TypeSdc, metricPrefix[models.TypeSdc], sdcStateLabels)...)
+	samples = append(samples, volumeMappingSamples(clusterName, systemID, in, rel, builders)...)
+	return samples
+}
+
+// volumeMappingSamples emits one pflex_volume_mapped_sdc info series (value 1) per
+// volume->SDC mapping, correlating a volume with each host consuming it (no k8s needed).
+// Volume identity/parent labels come from the generation's union volume label builder,
+// then sdc_id and sdc_ip are appended in the same order for both generations.
+func volumeMappingSamples(clusterName, systemID string, in *models.Instances, rel *models.Relations, builders map[string]labelBuilder) []Sample {
+	builder, ok := builders[models.TypeVolume]
+	if !ok {
+		return nil
+	}
+	var samples []Sample
+	for _, vol := range in.Get(models.TypeVolume) {
+		base, ok := builder(clusterName, systemID, vol, in, rel)
+		if !ok {
+			continue
+		}
+		for _, m := range vol.MappedSdcInfo {
+			labels := make([]Label, 0, len(base)+2)
+			labels = append(labels, base...)
+			labels = append(labels, Label{"sdc_id", m.SdcID}, Label{"sdc_ip", m.SdcIP})
+			samples = append(samples, Sample{Name: "pflex_volume_mapped_sdc", Labels: labels, Value: 1})
+		}
+	}
 	return samples
 }
 
