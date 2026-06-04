@@ -14,17 +14,19 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/fjacquet/pflex_exporter/internal/models"
 	"github.com/fjacquet/pflex_exporter/internal/powerflex"
 )
 
 // defaultCSIDriver is the Dell PowerFlex (VxFlex OS) CSI provisioner name.
-const defaultCSIDriver = "csi-vxflexos.dellemc.com"
+const defaultCSIDriver = models.DefaultCSIDriverName
 
 // volumeMeta is the Kubernetes workload context for a PowerFlex volume.
 type volumeMeta struct {
@@ -127,18 +129,51 @@ func (e *Enricher) SDCLabels(sdcIP string) []powerflex.Label {
 }
 
 // Refresh rebuilds the volume and node lookup maps from the cluster's PVs and Nodes.
+// The two List calls are independent, so they run concurrently.
 func (e *Enricher) Refresh(ctx context.Context) error {
 	if !e.enabled {
 		return nil
 	}
 
-	pvs, err := e.clientset.CoreV1().PersistentVolumes().List(ctx, metav1.ListOptions{})
-	if err != nil {
+	var (
+		volumes  map[string]volumeMeta
+		nodeByIP map[string]string
+	)
+	g, gctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		pvs, err := e.clientset.CoreV1().PersistentVolumes().List(gctx, metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		volumes = e.volumesFromPVs(pvs.Items)
+		return nil
+	})
+	g.Go(func() error {
+		nodes, err := e.clientset.CoreV1().Nodes().List(gctx, metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		nodeByIP = nodesByIP(nodes.Items)
+		return nil
+	})
+	if err := g.Wait(); err != nil {
 		return err
 	}
-	volumes := make(map[string]volumeMeta, len(pvs.Items))
-	for i := range pvs.Items {
-		pv := &pvs.Items[i]
+
+	e.mu.Lock()
+	e.volumes = volumes
+	e.nodes = nodeByIP
+	e.mu.Unlock()
+	log.Debugf("kubernetes enrichment refreshed: %d volumes, %d node IPs", len(volumes), len(nodeByIP))
+	return nil
+}
+
+// volumesFromPVs indexes PowerFlex volume IDs to workload context for the PVs that match
+// the configured CSI driver.
+func (e *Enricher) volumesFromPVs(items []corev1.PersistentVolume) map[string]volumeMeta {
+	volumes := make(map[string]volumeMeta, len(items))
+	for i := range items {
+		pv := &items[i]
 		if pv.Spec.CSI == nil || pv.Spec.CSI.Driver != e.csiDriver {
 			continue
 		}
@@ -153,27 +188,21 @@ func (e *Enricher) Refresh(ctx context.Context) error {
 		}
 		volumes[volID] = m
 	}
+	return volumes
+}
 
-	nodes, err := e.clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	nodeByIP := make(map[string]string, len(nodes.Items))
-	for i := range nodes.Items {
-		n := &nodes.Items[i]
+// nodesByIP indexes node names by their internal and external IP addresses.
+func nodesByIP(items []corev1.Node) map[string]string {
+	nodeByIP := make(map[string]string, len(items))
+	for i := range items {
+		n := &items[i]
 		for _, addr := range n.Status.Addresses {
 			if addr.Type == corev1.NodeInternalIP || addr.Type == corev1.NodeExternalIP {
 				nodeByIP[addr.Address] = n.Name
 			}
 		}
 	}
-
-	e.mu.Lock()
-	e.volumes = volumes
-	e.nodes = nodeByIP
-	e.mu.Unlock()
-	log.Debugf("kubernetes enrichment refreshed: %d volumes, %d node IPs", len(volumes), len(nodeByIP))
-	return nil
+	return nodeByIP
 }
 
 // Run refreshes the lookup maps on the configured interval until ctx is cancelled.
