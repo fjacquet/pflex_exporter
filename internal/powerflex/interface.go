@@ -21,8 +21,10 @@ type Client interface {
 	// GetStatistics fetches POST /api/instances/querySelectedStatistics (Gen1).
 	GetStatistics(ctx context.Context) (*models.Statistics, error)
 
-	// GetStatisticsV5 fetches Gen2 statistics via the v5 metrics API.
-	GetStatisticsV5(ctx context.Context) (*StatisticsV5, error)
+	// GetStatisticsV5 fetches Gen2 statistics via the v5 metrics API. Any resource types
+	// named in skipTypes are not queried (used by collection decimation to reuse prior
+	// samples for slow-changing types).
+	GetStatisticsV5(ctx context.Context, skipTypes ...string) (*StatisticsV5, error)
 
 	// Close releases the client's HTTP resources.
 	Close() error

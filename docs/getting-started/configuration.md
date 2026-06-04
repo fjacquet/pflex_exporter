@@ -10,8 +10,17 @@ server:
   logName: "/var/log/pflex_exporter/pflex-exporter.log" # absolute; "" -> stdout only (recommended under systemd/k8s)
 
 collection:
-  interval: "10s" # how often the background loop polls every cluster
-  timeout: "8s"   # per-cluster collection timeout
+  interval: "10s"            # how often the background loop polls every cluster
+  timeout: "8s"              # per-cluster collection timeout
+  maxConcurrentClusters: 0   # cap on clusters polled in parallel; 0 = unlimited
+  slowResourceEveryN: 1      # decimation multiplier (Gen2); 1 = disabled
+  slowResourceTypes: []      # e.g. ["DeviceGroup", "Sdt", "ProtectionDomain"]
+
+kubernetes:                  # optional workload enrichment (portable; no-op when standalone)
+  enabled: false
+  refreshInterval: "60s"
+  csiDriverName: "csi-vxflexos.dellemc.com"
+  # kubeconfig: "/path/to/kubeconfig"   # optional; in-cluster / default rules used when empty
 
 opentelemetry:
   metrics:                       # OTLP metric push
@@ -41,10 +50,56 @@ clusters:
 | `server` | `logName` | Log file path (use an **absolute** path so it resolves the same in containers); empty string logs to stdout (recommended under systemd/k8s). If the path is not writable, logging falls back to stdout with a warning instead of failing to start. |
 | `collection` | `interval` | Background poll period for every cluster. Matches Prometheus scrape cadence well at `10s`–`30s`. |
 | `collection` | `timeout` | Per-cluster timeout; a slow/unreachable cluster fails fast without blocking others. |
+| `collection` | `maxConcurrentClusters` | Cap on clusters polled in parallel per cycle. `0` (default) = unlimited. Set it when monitoring many clusters to smooth concurrent API load. |
+| `collection` | `slowResourceEveryN`, `slowResourceTypes` | Decimation: collect the listed object types' statistics only every Nth cycle (reusing prior samples in between). See [Scaling](#scaling-large-estates). |
+| `kubernetes` | `enabled`, `refreshInterval`, `csiDriverName`, `kubeconfig` | Optional workload enrichment. See [Kubernetes enrichment](#kubernetes-workload-enrichment). |
 | `opentelemetry.metrics` | `enabled`, `endpoint`, `interval` | OTLP gRPC metric push. |
 | `opentelemetry.tracing` | `enabled`, `endpoint`, `samplingRate` | OTLP gRPC tracing for diagnosing slow cycles. |
 | `clusters[]` | `name` | Unique; becomes the `cluster` label/attribute on every metric. |
 | `clusters[]` | `gateway`, `username`, `password` | Connection details. `insecureSkipVerify` accepts self-signed gateway certs. |
+
+## Scaling large estates
+
+Two knobs bound the API load the exporter places on PowerFlex when monitoring many
+clusters or very large arrays:
+
+- **`maxConcurrentClusters`** limits how many clusters are polled at once. With the
+  default `0` every configured cluster is polled concurrently each cycle; set a positive
+  cap (e.g. `4`) to spread the load.
+- **Decimation** (`slowResourceEveryN` + `slowResourceTypes`) collects slow-changing
+  object types less often. With `slowResourceEveryN: 6` and
+  `slowResourceTypes: ["DeviceGroup", "Sdt", "ProtectionDomain"]`, those types' statistics
+  are fetched on every 6th cycle and the previous samples are reused in between — their
+  series stay continuous while their API queries drop by ~83%.
+
+  Decimation is **Gen2-only**: Gen2 fetches statistics per resource type, so skipping a
+  type saves a real API call. Gen1 returns all statistics in a single query, so there is
+  nothing to skip — Gen1 clusters are always collected in full. Operational state and
+  health metrics come from the instance list (fetched every cycle), so they remain fresh
+  regardless of decimation.
+
+## Kubernetes workload enrichment
+
+When `kubernetes.enabled: true`, the exporter resolves Kubernetes workload context from
+the cluster's PersistentVolumes and Nodes and adds it as labels:
+
+| Metrics | Added labels |
+|---|---|
+| `pflex_volume_*` (performance & capacity) | `namespace`, `persistent_volume_claim`, `persistent_volume`, `storage_class` |
+| `pflex_sdc_*` (performance) | `k8s_node` |
+
+Volumes are matched to PVs through the PowerFlex CSI driver (`csiDriverName`, default
+`csi-vxflexos.dellemc.com`): the PV's CSI `volumeHandle` (`<systemID>-<volumeID>`) maps to
+the PowerFlex volume ID, and the PV's `claimRef` supplies the namespace and claim. SDCs are
+matched to Nodes by IP address. The PV/Node caches refresh every `refreshInterval`.
+
+This feature is **portable**. The exporter looks for an in-cluster service account, then a
+`kubeconfig` (explicit path, `KUBECONFIG`, or `~/.kube/config`). If none is reachable, it
+logs a warning and runs with enrichment disabled — the same binary works standalone, in a
+VM, or in a pod. When enrichment is on, the added label keys are present on **every**
+volume/SDC series (empty when a workload can't be resolved) so the metric label set stays
+consistent. See [Deployment → Kubernetes](../deployment/kubernetes.md) for the RBAC the
+service account needs.
 
 ## Generations
 

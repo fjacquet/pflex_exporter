@@ -126,10 +126,19 @@ func (c *ClusterClient) GetStatistics(ctx context.Context) (*models.Statistics, 
 }
 
 // GetStatisticsV5 fetches Gen2 metrics by querying the v5 endpoint once per resource
-// type. A failed per-type query is logged and skipped (graceful degradation).
-func (c *ClusterClient) GetStatisticsV5(ctx context.Context) (*StatisticsV5, error) {
+// type. A failed per-type query is logged and skipped (graceful degradation). Resource
+// types listed in skipTypes are not queried at all.
+func (c *ClusterClient) GetStatisticsV5(ctx context.Context, skipTypes ...string) (*StatisticsV5, error) {
+	skip := make(map[string]struct{}, len(skipTypes))
+	for _, t := range skipTypes {
+		skip[t] = struct{}{}
+	}
 	stats := &StatisticsV5{ByType: make(map[string]map[string]map[string]float64, len(v5Metrics))}
+	var attempted, succeeded int
 	for typeName, mapping := range v5Metrics {
+		if _, skipped := skip[typeName]; skipped {
+			continue
+		}
 		v5type, ok := v5ResourceType[typeName]
 		if !ok || len(mapping) == 0 {
 			continue
@@ -143,6 +152,7 @@ func (c *ClusterClient) GetStatisticsV5(ctx context.Context) (*StatisticsV5, err
 			return nil, err
 		}
 
+		attempted++
 		respBody, err := c.post(ctx, v5StatisticsPath, reqBody)
 		if err != nil {
 			log.Warnf("cluster %q: v5 metrics query for %s failed: %v", c.name, typeName, err)
@@ -154,6 +164,12 @@ func (c *ClusterClient) GetStatisticsV5(ctx context.Context) (*StatisticsV5, err
 			continue
 		}
 		stats.ByType[typeName] = byID
+		succeeded++
+	}
+	// Partial failures degrade gracefully, but a total failure (no type succeeded) is a
+	// hard error so the collector can fall back to the other statistics path.
+	if attempted > 0 && succeeded == 0 {
+		return nil, fmt.Errorf("cluster %q: all %d v5 metric queries failed", c.name, attempted)
 	}
 	return stats, nil
 }

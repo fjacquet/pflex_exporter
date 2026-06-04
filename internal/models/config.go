@@ -58,7 +58,30 @@ type Config struct {
 	Collection struct {
 		Interval string `yaml:"interval"` // background collection loop period (e.g. "10s")
 		Timeout  string `yaml:"timeout"`  // per-cluster collection timeout (e.g. "8s")
+		// MaxConcurrentClusters caps how many clusters are polled in parallel per cycle.
+		// 0 (default) means unlimited (every cluster polled concurrently).
+		MaxConcurrentClusters int `yaml:"maxConcurrentClusters"`
+		// SlowResourceEveryN, when > 1, collects the SlowResourceTypes statistics only
+		// every Nth cycle (reusing prior samples in between) to reduce API load on large
+		// arrays. 1 (default) disables decimation. Gen2 only (see SlowResourceTypes).
+		SlowResourceEveryN int `yaml:"slowResourceEveryN"`
+		// SlowResourceTypes lists the PowerFlex object types treated as slow-changing for
+		// decimation (e.g. DeviceGroup, Sdt, ProtectionDomain). Empty (default) disables
+		// it. Only effective for Gen2, whose statistics are fetched per resource type;
+		// Gen1 statistics arrive in a single query and are always collected in full.
+		SlowResourceTypes []string `yaml:"slowResourceTypes"`
 	} `yaml:"collection"`
+
+	// Kubernetes enables optional workload enrichment: volume metrics gain namespace /
+	// PVC / PV / storageClass labels and SDC metrics gain a node label, resolved from the
+	// cluster's PersistentVolumes and Nodes. It is portable: when the exporter is not
+	// running in (or configured for) a reachable cluster it degrades to a no-op.
+	Kubernetes struct {
+		Enabled         bool   `yaml:"enabled"`
+		RefreshInterval string `yaml:"refreshInterval"` // PV/Node cache refresh period (e.g. "60s")
+		CSIDriverName   string `yaml:"csiDriverName"`   // CSI driver to match (default csi-vxflexos.dellemc.com)
+		Kubeconfig      string `yaml:"kubeconfig"`      // explicit kubeconfig path (optional; in-cluster used otherwise)
+	} `yaml:"kubernetes"`
 
 	OpenTelemetry struct {
 		Metrics OTelExportConfig `yaml:"metrics"`
@@ -66,6 +89,16 @@ type Config struct {
 	} `yaml:"opentelemetry"`
 
 	Clusters []ClusterConfig `yaml:"clusters"`
+}
+
+// defaultCSIDriverName is the Dell PowerFlex (VxFlex OS) CSI driver provisioner name.
+const defaultCSIDriverName = "csi-vxflexos.dellemc.com"
+
+// validSlowResourceTypes is the set of object-type names accepted in
+// Collection.SlowResourceTypes (mirrors the normalized type names in instances.go).
+var validSlowResourceTypes = map[string]struct{}{
+	TypeSystem: {}, TypeSds: {}, TypeSdc: {}, TypeVolume: {}, TypeStoragePool: {},
+	TypeDevice: {}, TypeProtectionDomain: {}, TypeStorageNode: {}, TypeDeviceGroup: {}, TypeSdt: {},
 }
 
 // SetDefaults sets default values for optional configuration fields.
@@ -87,6 +120,20 @@ func (c *Config) SetDefaults() {
 	}
 	if c.OpenTelemetry.Metrics.Interval == "" {
 		c.OpenTelemetry.Metrics.Interval = c.Collection.Interval
+	}
+	if c.Collection.MaxConcurrentClusters < 0 {
+		c.Collection.MaxConcurrentClusters = 0
+	}
+	if c.Collection.SlowResourceEveryN <= 0 {
+		c.Collection.SlowResourceEveryN = 1
+	}
+	if c.Kubernetes.Enabled {
+		if c.Kubernetes.RefreshInterval == "" {
+			c.Kubernetes.RefreshInterval = "60s"
+		}
+		if c.Kubernetes.CSIDriverName == "" {
+			c.Kubernetes.CSIDriverName = defaultCSIDriverName
+		}
 	}
 }
 
@@ -129,6 +176,16 @@ func (c *Config) validateCollection() error {
 	}
 	if _, err := time.ParseDuration(c.Collection.Timeout); err != nil {
 		return fmt.Errorf("invalid collection timeout '%s': %w (expected format: 8s, 30s)", c.Collection.Timeout, err)
+	}
+	for _, t := range c.Collection.SlowResourceTypes {
+		if _, ok := validSlowResourceTypes[t]; !ok {
+			return fmt.Errorf("invalid collection slowResourceTypes entry %q (expected a PowerFlex object type, e.g. DeviceGroup, Sdt, ProtectionDomain)", t)
+		}
+	}
+	if c.Kubernetes.Enabled {
+		if _, err := time.ParseDuration(c.Kubernetes.RefreshInterval); err != nil {
+			return fmt.Errorf("invalid kubernetes refreshInterval '%s': %w (expected format: 60s, 2m)", c.Kubernetes.RefreshInterval, err)
+		}
 	}
 	return nil
 }
@@ -202,6 +259,28 @@ func (c *Config) GetCollectionTimeout() time.Duration {
 // GetMetricsPushInterval returns the OTLP metric push period.
 func (c *Config) GetMetricsPushInterval() time.Duration {
 	return mustDuration(c.OpenTelemetry.Metrics.Interval, c.GetCollectionInterval())
+}
+
+// GetMaxConcurrentClusters returns the cap on clusters polled in parallel (0 = unlimited).
+func (c *Config) GetMaxConcurrentClusters() int { return c.Collection.MaxConcurrentClusters }
+
+// GetSlowResourceEveryN returns the decimation multiplier for slow resource types (>=1).
+func (c *Config) GetSlowResourceEveryN() int {
+	if c.Collection.SlowResourceEveryN <= 0 {
+		return 1
+	}
+	return c.Collection.SlowResourceEveryN
+}
+
+// GetSlowResourceTypes returns the object types subject to decimation.
+func (c *Config) GetSlowResourceTypes() []string { return c.Collection.SlowResourceTypes }
+
+// IsKubernetesEnabled reports whether optional k8s workload enrichment is enabled.
+func (c *Config) IsKubernetesEnabled() bool { return c.Kubernetes.Enabled }
+
+// GetKubernetesRefreshInterval returns the PV/Node cache refresh period.
+func (c *Config) GetKubernetesRefreshInterval() time.Duration {
+	return mustDuration(c.Kubernetes.RefreshInterval, 60*time.Second)
 }
 
 // IsOTelMetricsEnabled reports whether OTLP metric push is enabled.

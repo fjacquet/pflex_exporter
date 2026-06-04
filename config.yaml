@@ -15,6 +15,26 @@ server:
 collection:
   interval: "10s" # how often the background loop polls every cluster
   timeout: "8s" # per-cluster collection timeout
+  # Cap on clusters polled in parallel per cycle. 0 (default) = unlimited.
+  # Set this when monitoring many clusters to avoid bursts of concurrent API load.
+  maxConcurrentClusters: 0
+  # Decimation (Gen2 only): collect the slowResourceTypes statistics every Nth cycle,
+  # reusing the prior cycle's samples in between, to cut API load on large arrays.
+  # slowResourceEveryN: 1 (default) disables it. Gen1 statistics arrive in a single
+  # query and are always collected in full.
+  slowResourceEveryN: 1
+  slowResourceTypes: [] # e.g. ["DeviceGroup", "Sdt", "ProtectionDomain"]
+
+# Optional Kubernetes workload enrichment. When enabled and a cluster is reachable,
+# volume metrics gain namespace / persistent_volume_claim / persistent_volume /
+# storage_class labels and SDC metrics gain a k8s_node label, resolved from the
+# cluster's PersistentVolumes and Nodes. Portable: degrades to a no-op when no cluster
+# config is reachable, so the same binary runs standalone or in-cluster.
+kubernetes:
+  enabled: false
+  refreshInterval: "60s" # PV/Node cache refresh period
+  csiDriverName: "csi-vxflexos.dellemc.com" # CSI driver to match PowerFlex PVs
+  # kubeconfig: "/path/to/kubeconfig"  # optional; in-cluster / default rules used when empty
 
 opentelemetry:
   # OTLP metric push (OpenTelemetry-first). Metrics are pushed to a collector/backend.

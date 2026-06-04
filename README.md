@@ -20,7 +20,9 @@ the architecture of [`nbu_exporter`](https://github.com/fjacquet/nbu_exporter).
 - **Both generations, auto-detected**: Gen1 (mirroring) via `querySelectedStatistics`, Gen2 (erasure coding) via the v5 metrics API — chosen per cluster from storage-pool layout.
 - **Full parity**: Gen1's 7 object types plus Gen2's StorageNode, DeviceGroup (PMEM/WRC) and Sdt (NVMe/TCP).
 - **Multi-cluster**: one process monitors many clusters (mixed generations OK); every metric carries a `cluster` label.
-- **Operational**: per-cluster OAuth token lifecycle, graceful degradation, hot config reload (SIGHUP + file watch), snapshot-based health endpoint, optional OTLP tracing.
+- **Kubernetes-aware (optional)**: enrich volume metrics with `namespace` / `persistent_volume_claim` / `persistent_volume` / `storage_class` and SDC metrics with `k8s_node`, mapped from the cluster's PVs/Nodes via the PowerFlex CSI driver. Portable — a no-op when run standalone.
+- **Scales to large estates**: configurable cap on concurrent cluster polling, plus optional decimation (collect slow-changing Gen2 resource types every Nth cycle) to bound API load.
+- **Operational**: per-cluster OAuth token lifecycle, graceful degradation, stats-path fallback (Gen1↔Gen2), hot config reload (SIGHUP + file watch), snapshot-based health endpoint, optional OTLP tracing.
 
 ## Quick start
 
