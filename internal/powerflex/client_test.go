@@ -29,6 +29,8 @@ type mockGateway struct {
 	statsV5Count     int    // Gen2 v5 metrics/query calls
 	failRefresh      bool   // when true, /rest/auth/update-token returns 400
 	failInstances    bool   // when true, /api/instances returns 500
+	failStats        bool   // when true, Gen1 querySelectedStatistics returns 500
+	failStatsV5      bool   // when true, Gen2 v5 metrics/query returns 500
 	instancesFixture string // fixture file served by /api/instances
 }
 
@@ -84,7 +86,14 @@ func newMockGateway(t *testing.T) *mockGateway {
 		}
 		g.mu.Lock()
 		g.statsCount++
+		fail := g.failStats
 		g.mu.Unlock()
+		if fail {
+			// 404 (not 5xx) so resty does not retry: simulates an endpoint removed in a
+			// point release, exercising the collector's stats-path fallback.
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		writeBytes(w, readFixture(t, "statistics.json"))
 	})
@@ -100,7 +109,14 @@ func newMockGateway(t *testing.T) *mockGateway {
 		_ = json.Unmarshal(body, &req)
 		g.mu.Lock()
 		g.statsV5Count++
+		fail := g.failStatsV5
 		g.mu.Unlock()
+		if fail {
+			// 404 (not 5xx) so resty does not retry: simulates the v5 endpoint being
+			// unavailable, exercising the collector's stats-path fallback.
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 
 		resources, ok := readV5Fixture(t)[req.ResourceType]
 		if !ok {

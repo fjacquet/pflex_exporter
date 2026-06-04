@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/fjacquet/pflex_exporter/internal/config"
+	"github.com/fjacquet/pflex_exporter/internal/k8s"
 	"github.com/fjacquet/pflex_exporter/internal/logging"
 	"github.com/fjacquet/pflex_exporter/internal/models"
 	"github.com/fjacquet/pflex_exporter/internal/powerflex"
@@ -64,6 +65,9 @@ type Server struct {
 	collectCancel context.CancelFunc
 	otlp          *powerflex.OTLPExporter
 
+	enricher       *k8s.Enricher
+	enricherCancel context.CancelFunc
+
 	configWatcher *fsnotify.Watcher
 	serverErrChan chan error
 }
@@ -85,6 +89,7 @@ func (s *Server) Start() error {
 	cfg := s.cfg.Get()
 
 	s.initTracing(cfg)
+	s.initEnrichment(cfg)
 
 	if err := s.startCollection(context.Background(), cfg); err != nil {
 		return err
@@ -140,11 +145,44 @@ func (s *Server) initTracing(cfg *models.Config) {
 	s.tracerProvider = mgr.TracerProvider()
 }
 
+// initEnrichment builds the optional Kubernetes workload enricher and, when enabled,
+// performs an initial cache refresh (so the first scrape is already enriched) and starts
+// its periodic refresh loop. When disabled or no cluster config is reachable it is a
+// no-op enricher.
+func (s *Server) initEnrichment(cfg *models.Config) {
+	e := k8s.NewEnricher(k8s.Config{
+		Enabled:       cfg.IsKubernetesEnabled(),
+		Kubeconfig:    cfg.Kubernetes.Kubeconfig,
+		CSIDriverName: cfg.Kubernetes.CSIDriverName,
+		Refresh:       cfg.GetKubernetesRefreshInterval(),
+	})
+	s.enricher = e
+	if !e.Enabled() {
+		return
+	}
+
+	refreshCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	if err := e.Refresh(refreshCtx); err != nil {
+		log.Warnf("Initial Kubernetes enrichment refresh failed: %v", err)
+	}
+	cancel()
+
+	loopCtx, loopCancel := context.WithCancel(context.Background())
+	s.enricherCancel = loopCancel
+	go e.Run(loopCtx)
+	log.Infof("Kubernetes workload enrichment enabled (CSI driver %q, refresh %s)",
+		cfg.Kubernetes.CSIDriverName, cfg.GetKubernetesRefreshInterval())
+}
+
 // startCollection builds the client pool and collector, runs an initial synchronous
 // cycle, and starts the background loop. Caller must hold no locks.
 func (s *Server) startCollection(ctx context.Context, cfg *models.Config) error {
 	clients := buildClients(cfg, s.tracerProvider)
-	collector := powerflex.NewCollector(clients, s.store, cfg.GetCollectionInterval(), cfg.GetCollectionTimeout(), s.tracerProvider)
+	collector := powerflex.NewCollector(clients, s.store, cfg.GetCollectionInterval(), cfg.GetCollectionTimeout(), s.tracerProvider,
+		powerflex.WithEnricher(s.enricher),
+		powerflex.WithMaxConcurrentClusters(cfg.GetMaxConcurrentClusters()),
+		powerflex.WithDecimation(cfg.GetSlowResourceEveryN(), cfg.GetSlowResourceTypes()),
+	)
 
 	// Initial synchronous cycle so the first scrape isn't empty and Gen detection runs.
 	initCtx, cancel := context.WithTimeout(ctx, cfg.GetCollectionTimeout()+5*time.Second)
@@ -273,6 +311,11 @@ func (s *Server) Shutdown() error {
 	}
 
 	s.stopCollection()
+
+	if s.enricherCancel != nil {
+		s.enricherCancel()
+		s.enricherCancel = nil
+	}
 
 	if s.otlp != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)

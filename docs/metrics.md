@@ -29,6 +29,21 @@ resolved from the PowerFlex relationship graph:
 | Device | `device_name`, `device_id`, `device_path`, `sds`, `sds_id`, `storage_pool_name`, `storage_pool_id`, `protection_domain_name`, `protection_domain_id` |
 | ProtectionDomain | `protection_domain_name`, `protection_domain_id` |
 
+### Kubernetes enrichment labels (optional)
+
+When [Kubernetes workload enrichment](getting-started/configuration.md#kubernetes-workload-enrichment)
+is enabled, two object types gain extra labels mapped from the cluster's PVs and Nodes:
+
+| Type | Added labels |
+|---|---|
+| Volume | `namespace`, `persistent_volume_claim`, `persistent_volume`, `storage_class` |
+| SDC | `k8s_node` |
+
+These keys are present on every `pflex_volume_*` / `pflex_sdc_*` series while enrichment is
+on (empty when a workload can't be resolved), so the label-key set stays consistent. They
+let you aggregate storage performance by namespace, claim, or node — e.g.
+`sum by (namespace) (pflex_volume_iops)`.
+
 ## Derived performance metrics
 
 PowerFlex reports `*Bwc` accumulators (`numOccured`, `numSeconds`, `totalWeightInKb`).

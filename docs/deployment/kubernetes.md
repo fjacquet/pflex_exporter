@@ -32,6 +32,42 @@ kubectl rollout status deploy/pflex-exporter
   `config.yaml` as `${FLEX1_PASSWORD}`. Prefer an external secret manager
   (External Secrets Operator, sealed-secrets, etc.) over committing the example Secret.
 
+## Workload enrichment (optional)
+
+Set `kubernetes.enabled: true` in `config.yaml` to label volume and SDC metrics with the
+Kubernetes workloads behind them (namespace, PVC, PV, storage class, node) — see
+[Configuration → Kubernetes enrichment](../getting-started/configuration.md#kubernetes-workload-enrichment).
+
+When running in-cluster the exporter uses its pod service account, which needs **read-only**
+access to PersistentVolumes and Nodes (both cluster-scoped):
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pflex-exporter-enrichment
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes", "nodes"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pflex-exporter-enrichment
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pflex-exporter-enrichment
+subjects:
+  - kind: ServiceAccount
+    name: pflex-exporter
+    namespace: <your-namespace>
+```
+
+The feature degrades to a no-op if the API is unreachable, so a missing binding only loses
+the enrichment labels — core metrics keep flowing.
+
 ## Prometheus Operator
 
 If you run the Prometheus Operator, uncomment `servicemonitor.yaml` in
