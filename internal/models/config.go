@@ -91,8 +91,9 @@ type Config struct {
 	Clusters []ClusterConfig `yaml:"clusters"`
 }
 
-// defaultCSIDriverName is the Dell PowerFlex (VxFlex OS) CSI driver provisioner name.
-const defaultCSIDriverName = "csi-vxflexos.dellemc.com"
+// DefaultCSIDriverName is the Dell PowerFlex (VxFlex OS) CSI driver provisioner name,
+// used as the default match for Kubernetes workload enrichment.
+const DefaultCSIDriverName = "csi-vxflexos.dellemc.com"
 
 // validSlowResourceTypes is the set of object-type names accepted in
 // Collection.SlowResourceTypes (mirrors the normalized type names in instances.go).
@@ -132,7 +133,7 @@ func (c *Config) SetDefaults() {
 			c.Kubernetes.RefreshInterval = "60s"
 		}
 		if c.Kubernetes.CSIDriverName == "" {
-			c.Kubernetes.CSIDriverName = defaultCSIDriverName
+			c.Kubernetes.CSIDriverName = DefaultCSIDriverName
 		}
 	}
 }
