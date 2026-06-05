@@ -8,12 +8,28 @@
 
 ## With Homebrew
 
+Works on macOS and Linuxbrew. The cask is published from the `fjacquet/homebrew-tap`
+tap on each release.
+
 ```bash
+# Install (the tap is added automatically by the qualified name):
 brew install --cask fjacquet/tap/pflex_exporter
+
+# ...or add the tap once, then install/upgrade by short name:
+brew tap fjacquet/tap
+brew install --cask pflex_exporter
+
+# Upgrade to the latest release:
+brew upgrade --cask pflex_exporter
+
+# Verify and uninstall:
+pflex_exporter --version
+brew uninstall --cask pflex_exporter
 ```
 
-Works on macOS and Linuxbrew. Published from the `fjacquet/homebrew-tap` tap on each
-release.
+The binary lands on your `PATH` (Homebrew strips the macOS quarantine bit
+automatically, so Gatekeeper won't block it). Pair it with a `config.yaml` — see
+[Configuration](configuration.md).
 
 ## From a release archive
 
