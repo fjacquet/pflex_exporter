@@ -6,20 +6,29 @@
 - A PowerFlex user with **monitor** privileges (read-only is sufficient).
 - One of: Go 1.25+ toolchain (build from source), Docker, or a Kubernetes cluster.
 
-## From a release binary
+## With Homebrew
 
-Download the binary for your platform from the
-[releases page](https://github.com/fjacquet/pflex_exporter/releases) and verify it
-against `checksums.txt`:
+```bash
+brew install --cask fjacquet/tap/pflex_exporter
+```
+
+Works on macOS and Linuxbrew. Published from the `fjacquet/homebrew-tap` tap on each
+release.
+
+## From a release archive
+
+Download the `tar.gz` for your platform from the
+[releases page](https://github.com/fjacquet/pflex_exporter/releases), verify it against
+`checksums.txt`, then extract and install:
 
 ```bash
 sha256sum -c checksums.txt --ignore-missing
-chmod +x pflex_exporter_*_linux_amd64
-sudo install pflex_exporter_*_linux_amd64 /usr/local/bin/pflex_exporter
+tar -xzf pflex_exporter_*_linux_amd64.tar.gz
+sudo install pflex_exporter /usr/local/bin/pflex_exporter
 pflex_exporter --version
 ```
 
-Each release also ships a CycloneDX SBOM (`sbom.cdx.json`).
+Each release also ships a CycloneDX SBOM (`pflex_exporter_<version>.sbom.cdx.json`).
 
 ## From source
 
