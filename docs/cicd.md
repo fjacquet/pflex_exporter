@@ -47,10 +47,11 @@ Two SBOMs are produced:
 ## Homebrew
 
 GoReleaser publishes a Homebrew **cask** to the `fjacquet/homebrew-tap` tap on each
-release (macOS + Linuxbrew):
+release. Casks are **macOS-only** (Homebrew does not support casks on Linux — Linux
+users should use the release archive, the GHCR image, or `go install`):
 
 ```bash
-brew install --cask fjacquet/tap/pflex_exporter
+brew install --cask fjacquet/tap/pflex_exporter   # macOS
 ```
 
 This requires two one-time prerequisites; until they exist the cask step is **skipped**

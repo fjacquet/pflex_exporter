@@ -56,9 +56,7 @@ sboms:
     cmd: cyclonedx-gomod
     args: ["mod", "-licenses", "-json", "-output", "$document", "../"]
 
-# Use GitHub's native auto-generated release notes (mirrors the previous
-# softprops/action-gh-release `generate_release_notes: true`).
-# Homebrew cask (macOS only — packages the darwin binaries). Published to a separate
+# Homebrew cask (macOS only — casks are not supported on Linux). Published to a separate
 # tap repo, which requires a cross-repo PAT (HOMEBREW_TAP_GITHUB_TOKEN); the default
 # GITHUB_TOKEN cannot push to another repo. `skip_upload` keeps releases (and local
 # snapshots) working until that secret + the tap repo exist.
@@ -82,6 +80,8 @@ homebrew_casks:
             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/pflex_exporter"]
           end
 
+# Use GitHub's native auto-generated release notes (mirrors the previous
+# softprops/action-gh-release `generate_release_notes: true`).
 changelog:
   use: github-native
 

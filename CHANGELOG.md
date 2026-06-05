@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The **Homebrew cask is now live** — the `fjacquet/homebrew-tap` repo and
   `HOMEBREW_TAP_GITHUB_TOKEN` secret are configured, so releases publish it:
-  `brew install --cask fjacquet/tap/pflex_exporter` (macOS + Linuxbrew).
+  `brew install --cask fjacquet/tap/pflex_exporter` (macOS; casks are not supported on
+  Linux — use the release archive, the GHCR image, or `go install` there).
 
 ### Changed
 
@@ -37,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Homebrew cask** published to the `fjacquet/homebrew-tap` tap on each release
-  (`brew install --cask fjacquet/tap/pflex_exporter`; macOS + Linuxbrew). Skipped
+  (`brew install --cask fjacquet/tap/pflex_exporter`; macOS only). Skipped
   automatically until the tap repo and `HOMEBREW_TAP_GITHUB_TOKEN` secret exist.
 - `.github/dependabot.yml` to keep the SHA-pinned Actions, Go modules, and Docker base
   current (weekly).

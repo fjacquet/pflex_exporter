@@ -57,13 +57,14 @@ GoReleaser. Reproducible-build flags (`-trimpath`, `mod_timestamp`) were added.
 ### 3. Distribute via a Homebrew cask
 
 GoReleaser's `homebrew_casks` stanza publishes a cask
-(`brew install --cask fjacquet/tap/pflex_exporter`; macOS + Linuxbrew) to a separate
-`fjacquet/homebrew-tap` repo. A cask (rather than a formula) was chosen per maintainer
-preference; the generated cask already covers both macOS and Linux artifacts. A
-post-install hook strips the macOS quarantine bit since the binaries are unsigned.
-Publishing is **gated on `HOMEBREW_TAP_GITHUB_TOKEN`** (a cross-repo PAT — the default
-`GITHUB_TOKEN` cannot push to another repo) and skipped when that secret is absent, so
-releases never break before the tap is set up.
+(`brew install --cask fjacquet/tap/pflex_exporter`) to a separate `fjacquet/homebrew-tap`
+repo. A cask is **macOS-only** (Homebrew does not support casks on Linux); it is
+GoReleaser's recommended path for distributing a pre-compiled binary, since the formula
+(`brews`) stanza is deprecated. Linux users install via the release archive, the GHCR
+image, or `go install`. A post-install hook strips the macOS quarantine bit since the
+binaries are unsigned. Publishing is **gated on `HOMEBREW_TAP_GITHUB_TOKEN`** (a
+cross-repo PAT — the default `GITHUB_TOKEN` cannot push to another repo) and skipped when
+that secret is absent, so releases never break before the tap is set up.
 
 ## Consequences
 
