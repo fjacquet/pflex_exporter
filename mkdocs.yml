@@ -53,3 +53,5 @@ nav:
   - Dashboards: dashboards.md
   - OpenTelemetry: opentelemetry.md
   - CI/CD & SBOM: cicd.md
+  - Architecture Decisions:
+      - ADR 0001 — CI supply-chain hardening: adr/0001-ci-supply-chain-hardening.md

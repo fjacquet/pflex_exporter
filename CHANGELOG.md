@@ -5,6 +5,34 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-06-05
+
+### Changed
+
+- **Release pipeline migrated to GoReleaser** (`.goreleaser.yaml`), replacing the
+  hand-rolled `make release` shell loop. It owns cross-compilation
+  (`linux,darwin × amd64,arm64`), `tar.gz` archives (bundling `LICENSE`, `README.md`,
+  `config.yaml`), `checksums.txt`, the CycloneDX SBOM, and the GitHub Release. The
+  module SBOM stays on **cyclonedx-gomod** (not syft), so its content is unchanged.
+  Reproducible-build flags (`-trimpath`, `mod_timestamp`) were added.
+  **Release assets are now `tar.gz` archives** instead of raw binaries.
+- **All GitHub Actions are pinned to full commit SHAs** (with `# vX.Y.Z` comments)
+  across `ci.yml`, `release.yml`, and `docs.yml`, hardening against mutable-tag
+  repoint attacks.
+- Pinned the Dockerfile build stage to `golang:1.26.4`.
+
+### Added
+
+- **Homebrew cask** published to the `fjacquet/homebrew-tap` tap on each release
+  (`brew install --cask fjacquet/tap/pflex_exporter`; macOS + Linuxbrew). Skipped
+  automatically until the tap repo and `HOMEBREW_TAP_GITHUB_TOKEN` secret exist.
+- `.github/dependabot.yml` to keep the SHA-pinned Actions, Go modules, and Docker base
+  current (weekly).
+- `make tools-sbom` (install just `cyclonedx-gomod`) and `make release-snapshot`
+  (local GoReleaser dry-run).
+- [ADR 0001](docs/adr/0001-ci-supply-chain-hardening.md) documenting the SHA-pinning
+  and GoReleaser migration decisions.
+
 ## [0.5.1] - 2026-06-04
 
 ### Added
@@ -92,6 +120,8 @@ Maintenance release (CI/packaging).
 - Initial release: **PowerFlex Gen1 exporter** exposing metrics via a Prometheus
   `/metrics` endpoint and an OTLP metric push.
 
+[Unreleased]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/fjacquet/pflex_exporter/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/fjacquet/pflex_exporter/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/fjacquet/pflex_exporter/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/fjacquet/pflex_exporter/compare/v0.3.0...v0.4.0

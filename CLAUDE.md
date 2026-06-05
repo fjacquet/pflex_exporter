@@ -12,7 +12,8 @@ Everything CI runs is a Makefile target, so it reproduces locally.
 - `make ci` — the full gate: gofmt check, `go vet`, `golangci-lint`, `go test -race`, `govulncheck`.
 - `make sure` — fmt + vet + test + build + lint (local convenience).
 - `make tools` — install pinned `golangci-lint`, `cyclonedx-gomod`, `govulncheck`.
-- `make sbom` — CycloneDX SBOM; `make release` — cross-compile binaries + SBOM + checksums.
+- `make sbom` — CycloneDX SBOM (module-level, via `cyclonedx-gomod`). `make tools-sbom` installs just that tool.
+- `make release` / `make release-snapshot` — **GoReleaser** drives the release (`.goreleaser.yaml`): cross-compile + `tar.gz` archives + SBOM + checksums + GitHub Release. `release` needs a `v*` tag and `GITHUB_TOKEN` (CI path); `release-snapshot` is a local dry-run with no publish. The release SBOM stays on `cyclonedx-gomod` (not syft); GoReleaser runs sbom hooks in `./dist`, so the module path is `../`.
 - Run it: `./bin/pflex_exporter --config config.yaml [--debug] [--once]`. Cluster secrets are `${ENV_VAR}` references in `config.yaml` (or `passwordFile`); export e.g. `FLEX1_PASSWORD` before running.
 - Docs site (MkDocs Material): `uvx --with mkdocs-material --with pymdown-extensions mkdocs build --strict` (or `serve`).
 - `vendor/` is git-ignored; dependencies are managed with `go mod`.
@@ -56,9 +57,9 @@ A Go exporter for **Dell PowerFlex (Gen1 and Gen2)** that exposes metrics via **
 
 ## CI/CD
 
-`.github/workflows/`: `ci.yml` (`make ci` + SBOM artifact + Semgrep), `release.yml` (on `v*` tags: binaries + SBOM to a GitHub Release, plus a multi-arch GHCR image with SBOM/provenance attestations), `docs.yml` (MkDocs → GitHub Pages via `configure-pages`/`deploy-pages`). Actions are pinned to Node 24-major versions. The repo's GitHub Pages `build_type` is `workflow` (Actions deployment), not branch-based.
+`.github/workflows/`: `ci.yml` (`make ci` + SBOM artifact + Semgrep), `release.yml` (on `v*` tags: a **GoReleaser** job for binaries/archives + SBOM + a **Homebrew cask** to a GitHub Release, plus a separate multi-arch GHCR image job with SBOM/provenance attestations), `docs.yml` (MkDocs → GitHub Pages via `configure-pages`/`deploy-pages`). The cask publishes to the `fjacquet/homebrew-tap` repo and needs a `HOMEBREW_TAP_GITHUB_TOKEN` secret (cross-repo PAT); it **self-skips** when that secret is empty/absent, so releases don't break before the tap exists. The repo's GitHub Pages `build_type` is `workflow` (Actions deployment), not branch-based. The supply-chain rationale is recorded in `docs/adr/0001-ci-supply-chain-hardening.md`.
 
-When adding or bumping a workflow action, confirm the tag exists first — Node 20 action runtimes are deprecated (use current Node 24 majors), and `astral-sh/setup-uv` has **no** moving `v8` tag (pin an exact version like `@v8.1.0`). Verify with `gh api repos/<owner>/<action>/releases/latest`.
+**Every action is pinned to a full commit SHA** with a trailing `# vX.Y.Z` comment (not a moving tag). `.github/dependabot.yml` (github-actions + gomod + docker) bumps both the SHA and the comment. When adding or bumping an action: resolve the tag to a SHA with `gh api repos/<owner>/<action>/commits/<tag> --jq .sha` and keep the version comment. Node 20 action runtimes are deprecated (use current Node 24 majors); `astral-sh/setup-uv` has **no** moving `v8` tag (pin an exact version). Verify a tag exists with `gh api repos/<owner>/<action>/releases/latest`.
 
 > A Semgrep scan runs on every file write via a hook and **blocks on findings**. Inline `// nosemgrep` is **not** honored — fix by restructuring (e.g. the `writeBytes(io.Writer, …)` test helper), not suppression. Dockerfiles must declare a non-root `USER`.
 

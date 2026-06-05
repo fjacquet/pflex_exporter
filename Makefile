@@ -2,7 +2,7 @@ BIN     = pflex_exporter
 DIST    = dist
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS = -s -w -X main.version=$(VERSION)
-PLATFORMS = linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
+# Cross-compilation targets are defined in .goreleaser.yaml (builds.goos/goarch).
 
 # Pinned tool versions (installed by `make tools`).
 GOLANGCI_LINT_VERSION   ?= v2.12.2
@@ -16,6 +16,10 @@ tools:
 	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 	go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@$(CYCLONEDX_GOMOD_VERSION)
 	go install golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION)
+
+# Just the SBOM generator — used by the release pipeline (GoReleaser sboms hook).
+tools-sbom:
+	go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@$(CYCLONEDX_GOMOD_VERSION)
 
 # --- quality gates (used by CI) ---
 
@@ -62,16 +66,15 @@ sbom:
 	cyclonedx-gomod mod -licenses -json -output $(DIST)/sbom.cdx.json
 	@echo "wrote $(DIST)/sbom.cdx.json"
 
-# Cross-compiled release binaries + SBOM + checksums.
-release: clean-dist sbom
-	@mkdir -p $(DIST)
-	@for p in $(PLATFORMS); do \
-	  os=$${p%/*}; arch=$${p#*/}; \
-	  out=$(DIST)/$(BIN)_$(VERSION)_$${os}_$${arch}; \
-	  echo "building $$out"; \
-	  GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o $$out . ; \
-	done
-	cd $(DIST) && sha256sum $(BIN)_* > checksums.txt
+# Cross-compiled binaries + archives + SBOM + checksums + GitHub Release.
+# Driven by GoReleaser (.goreleaser.yaml). Real releases run from a `v*` tag in CI;
+# this target reproduces that pipeline locally — needs a tag and GITHUB_TOKEN.
+release: tools-sbom
+	goreleaser release --clean
+
+# Local dry-run: full pipeline (build, archive, SBOM, checksums) without publishing.
+release-snapshot: tools-sbom
+	goreleaser release --snapshot --clean
 	@echo "release artifacts in $(DIST)/"
 
 docker:
@@ -86,5 +89,5 @@ clean-dist:
 clean: clean-dist
 	rm -f bin/$(BIN) coverage.out coverage.html
 
-.PHONY: all tools fmt-check fmt vet lint test test-race test-coverage vuln ci sure \
-        cli sbom release docker run-cli clean-dist clean
+.PHONY: all tools tools-sbom fmt-check fmt vet lint test test-race test-coverage vuln ci sure \
+        cli sbom release release-snapshot docker run-cli clean-dist clean
