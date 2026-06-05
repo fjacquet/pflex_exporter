@@ -33,8 +33,8 @@ export FLEX1_PASSWORD='your-monitor-password'
 # metrics: http://localhost:2112/metrics   health: http://localhost:2112/health
 ```
 
-Or install with Homebrew: `brew install --cask fjacquet/tap/pflex_exporter`
-(macOS + Linuxbrew), or with Docker: `docker pull ghcr.io/fjacquet/pflex_exporter:latest`.
+Or install with Homebrew (macOS): `brew install --cask fjacquet/tap/pflex_exporter`,
+or with Docker: `docker pull ghcr.io/fjacquet/pflex_exporter:latest`.
 
 ## Documentation
 

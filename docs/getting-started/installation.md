@@ -6,10 +6,11 @@
 - A PowerFlex user with **monitor** privileges (read-only is sufficient).
 - One of: Go 1.25+ toolchain (build from source), Docker, or a Kubernetes cluster.
 
-## With Homebrew
+## With Homebrew (macOS)
 
-Works on macOS and Linuxbrew. The cask is published from the `fjacquet/homebrew-tap`
-tap on each release.
+The cask is published from the `fjacquet/homebrew-tap` tap on each release.
+**Homebrew casks are macOS-only** — on Linux, use the [release archive](#from-a-release-archive),
+the [container image](#container-image), or `go install` instead.
 
 ```bash
 # Install (the tap is added automatically by the qualified name):
