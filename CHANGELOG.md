@@ -5,6 +5,19 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-06-05
+
+### Added
+
+- The **Homebrew cask is now live** — the `fjacquet/homebrew-tap` repo and
+  `HOMEBREW_TAP_GITHUB_TOKEN` secret are configured, so releases publish it:
+  `brew install --cask fjacquet/tap/pflex_exporter` (macOS + Linuxbrew).
+
+### Changed
+
+- Trimmed the auto-generated RTK command reference out of `CLAUDE.md` (it lives in the
+  global `~/.claude/CLAUDE.md`), leaving only project-specific context.
+
 ## [0.6.0] - 2026-06-05
 
 ### Changed
@@ -120,7 +133,8 @@ Maintenance release (CI/packaging).
 - Initial release: **PowerFlex Gen1 exporter** exposing metrics via a Prometheus
   `/metrics` endpoint and an OTLP metric push.
 
-[Unreleased]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/fjacquet/pflex_exporter/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/fjacquet/pflex_exporter/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/fjacquet/pflex_exporter/compare/v0.4.0...v0.5.0
