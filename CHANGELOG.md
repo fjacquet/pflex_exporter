@@ -5,6 +5,23 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-06-09
+
+### Fixed
+
+- **Gen2 statistics no longer time out on slower clusters.** The v5 dtapi metric queries
+  (one per resource type) now run **concurrently** instead of serially, so the ~9
+  round-trips fit the shared per-cluster `collection.timeout` (default 8s) the way Gen1's
+  single call always has. Previously a slow `/dtapi/rest/v1/metrics/query` endpoint
+  exhausted the budget mid-cycle, producing recurring `context deadline exceeded` warnings
+  and missing Gen2 metrics. The request's `metrics` field is now also sent as the
+  documented comma-separated string rather than a JSON array.
+
+### Changed
+
+- CI GitHub Actions bumped via Dependabot; Homebrew install docs corrected to note casks
+  are macOS-only.
+
 ## [0.6.1] - 2026-06-05
 
 ### Added
@@ -134,7 +151,8 @@ Maintenance release (CI/packaging).
 - Initial release: **PowerFlex Gen1 exporter** exposing metrics via a Prometheus
   `/metrics` endpoint and an OTLP metric push.
 
-[Unreleased]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/fjacquet/pflex_exporter/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/fjacquet/pflex_exporter/compare/v0.5.0...v0.5.1
