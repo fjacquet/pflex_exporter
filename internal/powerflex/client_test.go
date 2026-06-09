@@ -110,8 +110,8 @@ func newMockGateway(t *testing.T) *mockGateway {
 		_ = json.Unmarshal(body, &raw)
 		var resourceType string
 		_ = json.Unmarshal(raw["resource_type"], &resourceType)
-		// The documented schema requires "metrics" as a comma-separated string; flag a
-		// JSON array so tests can assert the request honors the contract.
+		// The real dtapi accepts "metrics" only as a JSON array; flag the form so tests
+		// can assert the request honors the contract the live server actually enforces.
 		metricsIsArray := len(raw["metrics"]) > 0 && raw["metrics"][0] == '['
 
 		g.mu.Lock()
@@ -130,6 +130,13 @@ func newMockGateway(t *testing.T) *mockGateway {
 			// 404 (not 5xx) so resty does not retry: simulates the v5 endpoint being
 			// unavailable, exercising the collector's stats-path fallback.
 			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if !metricsIsArray {
+			// The live dtapi rejects a non-array "metrics" (e.g. a comma-separated string)
+			// with an instant HTTP 500. Mirror that so the contract is enforced in tests.
+			w.WriteHeader(http.StatusInternalServerError)
+			writeBytes(w, []byte(`{"message":"metrics must be a JSON array"}`))
 			return
 		}
 
@@ -341,8 +348,10 @@ func TestGetStatisticsParses(t *testing.T) {
 //     resource_type per call (PowerFlex API 5.0.0), so all types must be fetched in
 //     parallel to fit the shared per-cluster timeout — a serial fan-out is what made a
 //     slow dtapi blow the 8s budget on real clusters.
-//  2. The "metrics" field must be a comma-separated string, per the documented request
-//     schema, not a JSON array.
+//  2. The "metrics" field must be sent as a JSON array — the form the live dtapi
+//     accepts (a comma-separated string gets an instant HTTP 500). This matches Dell's
+//     reference siocli/sio_sdk implementation; the PDF's "comma-separated string" schema
+//     is wrong, and trusting it shipped a regression in v0.6.2.
 func TestGetStatisticsV5ConcurrentAndMetricsContract(t *testing.T) {
 	g := newMockGateway(t)
 	const delay = 120 * time.Millisecond
@@ -370,8 +379,8 @@ func TestGetStatisticsV5ConcurrentAndMetricsContract(t *testing.T) {
 	g.mu.Lock()
 	sawArray := g.metricsFieldArray
 	g.mu.Unlock()
-	if sawArray {
-		t.Error(`v5 request sent "metrics" as a JSON array; the documented schema requires a comma-separated string`)
+	if !sawArray {
+		t.Error(`v5 request must send "metrics" as a JSON array; the live dtapi rejects a comma-separated string with HTTP 500`)
 	}
 }
 

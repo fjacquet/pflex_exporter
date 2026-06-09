@@ -80,8 +80,11 @@ func NewClusterClient(cfg models.ClusterConfig, opts ...ClientOption) *ClusterCl
 			if err != nil {
 				return true
 			}
-			// Retry only transient failures; never retry 4xx (auth/bad-request).
-			return r.StatusCode() == http.StatusTooManyRequests || r.StatusCode() >= 500
+			// Retry only rate-limiting (429). Never retry 4xx (auth/bad-request), and
+			// never retry 5xx: PowerFlex 5xx here are deterministic (e.g. a malformed
+			// query), so retrying with a 5s backoff only buries the real status under a
+			// context-deadline timeout — which is exactly what masked the v0.6.2 regression.
+			return r.StatusCode() == http.StatusTooManyRequests
 		})
 
 	httpClient.GetClient().Transport = &http.Transport{
@@ -161,9 +164,11 @@ func (c *ClusterClient) GetStatisticsV5(ctx context.Context, skipTypes ...string
 		for name := range mapping {
 			metricNames = append(metricNames, name)
 		}
-		// The documented dtapi schema requires "metrics" as a comma-separated string,
-		// not a JSON array (PowerFlex API 5.0.0, POST /dtapi/rest/v1/metrics/query).
-		reqBody, err := json.Marshal(map[string]any{"resource_type": v5type, "metrics": strings.Join(metricNames, ",")})
+		// The live dtapi accepts "metrics" only as a JSON array; a comma-separated string
+		// gets an instant HTTP 500. This matches Dell's reference siocli/sio_sdk tool. (The
+		// PowerFlex 5.0 PDF documents a comma-separated string, but that is wrong — trusting
+		// it shipped a regression in v0.6.2.)
+		reqBody, err := json.Marshal(map[string]any{"resource_type": v5type, "metrics": metricNames})
 		if err != nil {
 			return nil, err
 		}
