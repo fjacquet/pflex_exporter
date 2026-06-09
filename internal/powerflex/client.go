@@ -15,6 +15,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -125,16 +126,29 @@ func (c *ClusterClient) GetStatistics(ctx context.Context) (*models.Statistics, 
 	return models.ParseStatistics(body)
 }
 
+// v5QueryConcurrency bounds how many per-type dtapi metric queries run at once. The
+// endpoint accepts a single resource_type per call, so the types are queried in parallel
+// to fit the shared per-cluster collection timeout rather than serializing nine
+// round-trips under it (a slow dtapi otherwise exhausted the budget mid-fan-out).
+const v5QueryConcurrency = 8
+
 // GetStatisticsV5 fetches Gen2 metrics by querying the v5 endpoint once per resource
-// type. A failed per-type query is logged and skipped (graceful degradation). Resource
-// types listed in skipTypes are not queried at all.
+// type, concurrently. A failed per-type query is logged and skipped (graceful
+// degradation). Resource types listed in skipTypes are not queried at all.
 func (c *ClusterClient) GetStatisticsV5(ctx context.Context, skipTypes ...string) (*StatisticsV5, error) {
 	skip := make(map[string]struct{}, len(skipTypes))
 	for _, t := range skipTypes {
 		skip[t] = struct{}{}
 	}
+
 	stats := &StatisticsV5{ByType: make(map[string]map[string]map[string]float64, len(v5Metrics))}
-	var attempted, succeeded int
+	var mu sync.Mutex // guards stats.ByType
+	var succeeded int32
+
+	var g errgroup.Group
+	g.SetLimit(v5QueryConcurrency)
+
+	attempted := 0
 	for typeName, mapping := range v5Metrics {
 		if _, skipped := skip[typeName]; skipped {
 			continue
@@ -147,28 +161,38 @@ func (c *ClusterClient) GetStatisticsV5(ctx context.Context, skipTypes ...string
 		for name := range mapping {
 			metricNames = append(metricNames, name)
 		}
-		reqBody, err := json.Marshal(map[string]any{"resource_type": v5type, "metrics": metricNames})
+		// The documented dtapi schema requires "metrics" as a comma-separated string,
+		// not a JSON array (PowerFlex API 5.0.0, POST /dtapi/rest/v1/metrics/query).
+		reqBody, err := json.Marshal(map[string]any{"resource_type": v5type, "metrics": strings.Join(metricNames, ",")})
 		if err != nil {
 			return nil, err
 		}
 
 		attempted++
-		respBody, err := c.post(ctx, v5StatisticsPath, reqBody)
-		if err != nil {
-			log.Warnf("cluster %q: v5 metrics query for %s failed: %v", c.name, typeName, err)
-			continue
-		}
-		byID, err := parseV5Response(respBody)
-		if err != nil {
-			log.Warnf("cluster %q: failed to parse v5 response for %s: %v", c.name, typeName, err)
-			continue
-		}
-		stats.ByType[typeName] = byID
-		succeeded++
+		typeName, reqBody := typeName, reqBody
+		g.Go(func() error {
+			respBody, err := c.post(ctx, v5StatisticsPath, reqBody)
+			if err != nil {
+				log.Warnf("cluster %q: v5 metrics query for %s failed: %v", c.name, typeName, err)
+				return nil // graceful degradation: one failed type must not sink the rest
+			}
+			byID, err := parseV5Response(respBody)
+			if err != nil {
+				log.Warnf("cluster %q: failed to parse v5 response for %s: %v", c.name, typeName, err)
+				return nil
+			}
+			mu.Lock()
+			stats.ByType[typeName] = byID
+			mu.Unlock()
+			atomic.AddInt32(&succeeded, 1)
+			return nil
+		})
 	}
+	_ = g.Wait()
+
 	// Partial failures degrade gracefully, but a total failure (no type succeeded) is a
 	// hard error so the collector can fall back to the other statistics path.
-	if attempted > 0 && succeeded == 0 {
+	if attempted > 0 && atomic.LoadInt32(&succeeded) == 0 {
 		return nil, fmt.Errorf("cluster %q: all %d v5 metric queries failed", c.name, attempted)
 	}
 	return stats, nil

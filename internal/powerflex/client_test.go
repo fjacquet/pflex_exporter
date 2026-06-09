@@ -32,6 +32,9 @@ type mockGateway struct {
 	failStats        bool   // when true, Gen1 querySelectedStatistics returns 500
 	failStatsV5      bool   // when true, Gen2 v5 metrics/query returns 500
 	instancesFixture string // fixture file served by /api/instances
+
+	statsV5Delay      time.Duration // artificial per-call delay for /dtapi metrics/query
+	metricsFieldArray bool          // set if any v5 request sent "metrics" as a JSON array
 }
 
 func newMockGateway(t *testing.T) *mockGateway {
@@ -103,14 +106,26 @@ func newMockGateway(t *testing.T) *mockGateway {
 			return
 		}
 		body, _ := io.ReadAll(r.Body)
-		var req struct {
-			ResourceType string `json:"resource_type"`
-		}
-		_ = json.Unmarshal(body, &req)
+		var raw map[string]json.RawMessage
+		_ = json.Unmarshal(body, &raw)
+		var resourceType string
+		_ = json.Unmarshal(raw["resource_type"], &resourceType)
+		// The documented schema requires "metrics" as a comma-separated string; flag a
+		// JSON array so tests can assert the request honors the contract.
+		metricsIsArray := len(raw["metrics"]) > 0 && raw["metrics"][0] == '['
+
 		g.mu.Lock()
 		g.statsV5Count++
 		fail := g.failStatsV5
+		delay := g.statsV5Delay
+		if metricsIsArray {
+			g.metricsFieldArray = true
+		}
 		g.mu.Unlock()
+
+		if delay > 0 {
+			time.Sleep(delay)
+		}
 		if fail {
 			// 404 (not 5xx) so resty does not retry: simulates the v5 endpoint being
 			// unavailable, exercising the collector's stats-path fallback.
@@ -118,7 +133,7 @@ func newMockGateway(t *testing.T) *mockGateway {
 			return
 		}
 
-		resources, ok := readV5Fixture(t)[req.ResourceType]
+		resources, ok := readV5Fixture(t)[resourceType]
 		if !ok {
 			resources = json.RawMessage("[]")
 		}
@@ -317,6 +332,46 @@ func TestGetStatisticsParses(t *testing.T) {
 	}
 	if vol := stats.Object(models.TypeVolume, "vol1"); vol == nil {
 		t.Error("expected stats for vol1")
+	}
+}
+
+// TestGetStatisticsV5ConcurrentAndMetricsContract guards the two Gen2 fixes:
+//
+//  1. The per-type dtapi queries must run concurrently. The endpoint accepts only one
+//     resource_type per call (PowerFlex API 5.0.0), so all types must be fetched in
+//     parallel to fit the shared per-cluster timeout — a serial fan-out is what made a
+//     slow dtapi blow the 8s budget on real clusters.
+//  2. The "metrics" field must be a comma-separated string, per the documented request
+//     schema, not a JSON array.
+func TestGetStatisticsV5ConcurrentAndMetricsContract(t *testing.T) {
+	g := newMockGateway(t)
+	const delay = 120 * time.Millisecond
+	g.statsV5Delay = delay
+	c := g.client(t)
+	defer func() { _ = c.Close() }()
+
+	start := time.Now()
+	stats, err := c.GetStatisticsV5(context.Background())
+	elapsed := time.Since(start)
+	if err != nil {
+		t.Fatalf("GetStatisticsV5: %v", err)
+	}
+	if stats == nil {
+		t.Fatal("expected non-nil stats")
+	}
+
+	// With N delayed types, serial execution costs N*delay; concurrent costs ~delay.
+	// There are 9 resource types (>1s serial at 120ms each); require well under half.
+	if elapsed > 700*time.Millisecond {
+		t.Errorf("v5 queries appear serial: %v elapsed for %d-type fan-out at %v each",
+			elapsed, len(v5Metrics), delay)
+	}
+
+	g.mu.Lock()
+	sawArray := g.metricsFieldArray
+	g.mu.Unlock()
+	if sawArray {
+		t.Error(`v5 request sent "metrics" as a JSON array; the documented schema requires a comma-separated string`)
 	}
 }
 
