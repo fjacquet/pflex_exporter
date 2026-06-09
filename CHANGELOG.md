@@ -5,6 +5,17 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.4] - 2026-06-09
+
+### Added
+
+- **Debug visibility for Gen2 v5 collection.** At `--debug`, each dtapi metrics query logs
+  its resource type, resource count, and elapsed time
+  (`cluster "flex-v3": v5 query volume -> 412 resources in 1.2s`), followed by a per-cluster
+  summary (`v5 stats 9/9 types ok in …`). Failed queries now report how long they took, which
+  distinguishes a fast server reject (HTTP 500) from a slow timeout — the ambiguity that
+  masked the dtapi failures. Silent at the default log level.
+
 ## [0.6.3] - 2026-06-09
 
 ### Fixed
@@ -166,7 +177,8 @@ Maintenance release (CI/packaging).
 - Initial release: **PowerFlex Gen1 exporter** exposing metrics via a Prometheus
   `/metrics` endpoint and an OTLP metric push.
 
-[Unreleased]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.3...HEAD
+[Unreleased]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.4...HEAD
+[0.6.4]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.0...v0.6.1
