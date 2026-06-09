@@ -151,6 +151,7 @@ func (c *ClusterClient) GetStatisticsV5(ctx context.Context, skipTypes ...string
 	var g errgroup.Group
 	g.SetLimit(v5QueryConcurrency)
 
+	cycleStart := time.Now()
 	attempted := 0
 	for typeName, mapping := range v5Metrics {
 		if _, skipped := skip[typeName]; skipped {
@@ -176,9 +177,13 @@ func (c *ClusterClient) GetStatisticsV5(ctx context.Context, skipTypes ...string
 		attempted++
 		typeName, reqBody := typeName, reqBody
 		g.Go(func() error {
+			start := time.Now()
 			respBody, err := c.post(ctx, v5StatisticsPath, reqBody)
+			elapsed := time.Since(start).Round(time.Millisecond)
 			if err != nil {
-				log.Warnf("cluster %q: v5 metrics query for %s failed: %v", c.name, typeName, err)
+				// Elapsed distinguishes a fast server reject (e.g. HTTP 500) from a slow
+				// timeout — the very ambiguity that masked the dtapi failures.
+				log.Warnf("cluster %q: v5 metrics query for %s failed after %s: %v", c.name, typeName, elapsed, err)
 				return nil // graceful degradation: one failed type must not sink the rest
 			}
 			byID, err := parseV5Response(respBody)
@@ -190,14 +195,18 @@ func (c *ClusterClient) GetStatisticsV5(ctx context.Context, skipTypes ...string
 			stats.ByType[typeName] = byID
 			mu.Unlock()
 			atomic.AddInt32(&succeeded, 1)
+			log.Debugf("cluster %q: v5 query %s -> %d resources in %s", c.name, typeName, len(byID), elapsed)
 			return nil
 		})
 	}
 	_ = g.Wait()
 
+	ok := atomic.LoadInt32(&succeeded)
+	log.Debugf("cluster %q: v5 stats %d/%d types ok in %s", c.name, ok, attempted, time.Since(cycleStart).Round(time.Millisecond))
+
 	// Partial failures degrade gracefully, but a total failure (no type succeeded) is a
 	// hard error so the collector can fall back to the other statistics path.
-	if attempted > 0 && atomic.LoadInt32(&succeeded) == 0 {
+	if attempted > 0 && ok == 0 {
 		return nil, fmt.Errorf("cluster %q: all %d v5 metric queries failed", c.name, attempted)
 	}
 	return stats, nil

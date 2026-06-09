@@ -1,6 +1,7 @@
 package powerflex
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/fjacquet/pflex_exporter/internal/models"
+	log "github.com/sirupsen/logrus"
 )
 
 // mockGateway is an in-memory PowerFlex gateway for tests.
@@ -381,6 +383,33 @@ func TestGetStatisticsV5ConcurrentAndMetricsContract(t *testing.T) {
 	g.mu.Unlock()
 	if !sawArray {
 		t.Error(`v5 request must send "metrics" as a JSON array; the live dtapi rejects a comma-separated string with HTTP 500`)
+	}
+}
+
+// TestGetStatisticsV5DebugLogging verifies the --debug-gated per-type timing/count lines
+// and the per-cluster v5 summary are emitted (silent at the default level). This is the
+// visibility that was missing while the dtapi failures were being misdiagnosed.
+func TestGetStatisticsV5DebugLogging(t *testing.T) {
+	g := newMockGateway(t)
+	c := g.client(t)
+	defer func() { _ = c.Close() }()
+
+	var buf bytes.Buffer
+	prevOut, prevLevel := log.StandardLogger().Out, log.GetLevel()
+	log.SetOutput(&buf)
+	log.SetLevel(log.DebugLevel)
+	defer func() { log.SetOutput(prevOut); log.SetLevel(prevLevel) }()
+
+	if _, err := c.GetStatisticsV5(context.Background()); err != nil {
+		t.Fatalf("GetStatisticsV5: %v", err)
+	}
+
+	out := buf.String()
+	if !strings.Contains(out, "v5 query ") {
+		t.Errorf("expected per-type v5 debug lines, got:\n%s", out)
+	}
+	if !strings.Contains(out, "v5 stats ") {
+		t.Errorf("expected per-cluster v5 summary line, got:\n%s", out)
 	}
 }
 
