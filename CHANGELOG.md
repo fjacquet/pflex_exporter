@@ -5,6 +5,21 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - 2026-06-09
+
+### Fixed
+
+- **Gen2 metrics restored — fixes a v0.6.2 regression.** v0.6.2 sent the dtapi `metrics`
+  field as a comma-separated string (per the PowerFlex 5.0 PDF schema), but the live
+  `/dtapi/rest/v1/metrics/query` rejects that with an instant **HTTP 500** and accepts only a
+  **JSON array** — as Dell's reference `siocli`/`sio_sdk` tool does. Reverted `metrics` to a
+  JSON array, so Gen2 statistics collection works again.
+- **5xx responses are no longer retried.** resty was retrying HTTP 500 with a 5s backoff
+  under the per-cluster timeout, turning an instant server error into a misleading
+  `context deadline exceeded` and hiding the real status (this masked the regression above).
+  Only `429` and transport errors are retried now; 4xx/5xx surface immediately with their
+  status and body.
+
 ## [0.6.2] - 2026-06-09
 
 ### Fixed
@@ -151,7 +166,8 @@ Maintenance release (CI/packaging).
 - Initial release: **PowerFlex Gen1 exporter** exposing metrics via a Prometheus
   `/metrics` endpoint and an OTLP metric push.
 
-[Unreleased]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.2...HEAD
+[Unreleased]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.3...HEAD
+[0.6.3]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/fjacquet/pflex_exporter/compare/v0.5.1...v0.6.0
