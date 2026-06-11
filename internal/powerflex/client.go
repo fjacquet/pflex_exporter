@@ -31,6 +31,11 @@ const (
 	instancesPath    = "/api/instances"
 	statisticsPath   = "/api/instances/querySelectedStatistics" // Gen1
 	v5StatisticsPath = "/dtapi/rest/v1/metrics/query"           // Gen2
+
+	// Auth endpoints. Their response BODIES carry the access/refresh tokens, so the
+	// --trace hook must never log them.
+	authLoginPath   = "/rest/auth/login"
+	authRefreshPath = "/rest/auth/update-token"
 )
 
 // ClientOption configures optional ClusterClient settings.
@@ -38,11 +43,20 @@ type ClientOption func(*clientOptions)
 
 type clientOptions struct {
 	tracerProvider trace.TracerProvider
+	trace          bool
 }
 
 // WithTracerProvider injects an OpenTelemetry TracerProvider for HTTP spans.
 func WithTracerProvider(tp trace.TracerProvider) ClientOption {
 	return func(o *clientOptions) { o.tracerProvider = tp }
+}
+
+// WithTrace logs every gateway API response (method, URL, status, body) for
+// validating payload shapes against a live cluster. Headers are never logged, and
+// the login/update-token responses (whose bodies carry the tokens) are skipped
+// entirely, so credentials cannot leak. Verbose — debugging only.
+func WithTrace(enabled bool) ClientOption {
+	return func(o *clientOptions) { o.trace = enabled }
 }
 
 // ClusterClient is the PowerFlex REST client for a single cluster. It owns the
@@ -99,6 +113,26 @@ func NewClusterClient(cfg models.ClusterConfig, opts ...ClientOption) *ClusterCl
 	}
 
 	baseURL := cfg.GatewayBaseURL()
+	if options.trace {
+		// Deliberately not resty's SetDebug: that dumps request headers including the
+		// Authorization bearer token. This logs only method/URL/status and the response
+		// body — and skips the auth endpoints, whose bodies carry the tokens. The
+		// tokenStore shares this resty client, so its login/refresh calls pass through
+		// this same hook.
+		httpClient.OnAfterResponse(func(_ *resty.Client, r *resty.Response) error {
+			url := r.Request.URL
+			if url == baseURL+authLoginPath || url == baseURL+authRefreshPath {
+				return nil // token-bearing bodies must never reach the log
+			}
+			log.WithFields(log.Fields{
+				"cluster": cfg.Name,
+				"method":  r.Request.Method,
+				"url":     url,
+				"status":  r.StatusCode(),
+			}).Infof("API trace:\n%s", r.Body())
+			return nil
+		})
+	}
 	return &ClusterClient{
 		name:    cfg.Name,
 		baseURL: baseURL,

@@ -145,4 +145,7 @@ kill -HUP $(pgrep pflex_exporter)     # or: systemctl reload pflex_exporter
 `pflex_exporter --config config.yaml` validates on startup: port ranges, durations,
 unique non-empty cluster names, required cluster fields, and OTLP endpoints. Use
 `--once` to run a single collection cycle and exit (useful for smoke tests), and
-`--debug` for verbose logging.
+`--debug` for verbose logging — combined with `--once` it also prints every
+collected sample (sorted, exposition style). Add `--trace` to log every gateway
+API response body (auth responses are skipped, so tokens never reach the log);
+see the [Quick Start](quickstart.md) for the full live-cluster validation recipe.

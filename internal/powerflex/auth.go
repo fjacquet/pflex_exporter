@@ -75,7 +75,7 @@ func (t *tokenStore) login(ctx context.Context) error {
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
 		SetBody(map[string]string{"username": t.username, "password": t.password}).
-		Post(t.baseURL + "/rest/auth/login")
+		Post(t.baseURL + authLoginPath)
 	if err != nil {
 		return fmt.Errorf("powerflex login request failed: %w", err)
 	}
@@ -106,7 +106,7 @@ func (t *tokenStore) refresh(ctx context.Context) error {
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
 		SetBody(map[string]string{"refresh_token": t.refreshToken}).
-		Post(t.baseURL + "/rest/auth/update-token")
+		Post(t.baseURL + authRefreshPath)
 	if err != nil {
 		return fmt.Errorf("powerflex token refresh request failed: %w", err)
 	}

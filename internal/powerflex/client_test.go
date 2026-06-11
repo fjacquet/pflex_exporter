@@ -413,6 +413,58 @@ func TestGetStatisticsV5DebugLogging(t *testing.T) {
 	}
 }
 
+// TestTraceDoesNotBreakCalls exercises the WithTrace OnAfterResponse hook on the
+// data path (logged) and on login + token refresh (skipped): PowerFlex auth
+// responses carry the bearer tokens in the BODY, so tracing them would leak
+// credentials into the log. The decoded results must be unaffected.
+func TestTraceDoesNotBreakCalls(t *testing.T) {
+	g := newMockGateway(t)
+	host := strings.TrimPrefix(g.server.URL, "https://")
+	c := NewClusterClient(models.ClusterConfig{
+		Name:               "test-cluster",
+		Gateway:            host,
+		Username:           "user",
+		Password:           "pass",
+		InsecureSkipVerify: true,
+	}, WithTrace(true))
+	defer func() { _ = c.Close() }()
+
+	var buf bytes.Buffer
+	prevOut, prevLevel := log.StandardLogger().Out, log.GetLevel()
+	log.SetOutput(&buf)
+	log.SetLevel(log.InfoLevel)
+	defer func() { log.SetOutput(prevOut); log.SetLevel(prevLevel) }()
+
+	instances, _, err := c.GetInstances(context.Background())
+	if err != nil {
+		t.Fatalf("GetInstances with trace enabled: %v", err)
+	}
+	if instances.System == nil || instances.System.Name != "cluster-one" {
+		t.Fatalf("trace hook altered the decoded result: %+v", instances.System)
+	}
+
+	// Force access-token expiry so the second call goes through /rest/auth/update-token,
+	// covering the refresh-response skip as well.
+	c.auth.mu.Lock()
+	c.auth.accessExpiry = time.Now().Add(-time.Minute)
+	c.auth.mu.Unlock()
+	if _, _, err := c.GetInstances(context.Background()); err != nil {
+		t.Fatalf("GetInstances after forced refresh: %v", err)
+	}
+
+	out := buf.String()
+	if !strings.Contains(out, "API trace") || !strings.Contains(out, instancesPath) {
+		t.Errorf("expected trace lines for %s, got:\n%s", instancesPath, out)
+	}
+	// The mock auth bodies carry these token values; any of them in the log means a
+	// token-bearing auth response was traced (credential leak).
+	for _, leak := range []string{"access-1", "refresh-1", "access-refreshed-1"} {
+		if strings.Contains(out, leak) {
+			t.Errorf("auth token %q leaked into trace output:\n%s", leak, out)
+		}
+	}
+}
+
 func TestRequestErrorPropagates(t *testing.T) {
 	g := newMockGateway(t)
 	g.failInstances = true

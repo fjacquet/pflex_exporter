@@ -25,6 +25,29 @@ expected metrics are produced, without starting the server loop:
 ./bin/pflex_exporter --config config.yaml --once --debug
 ```
 
+Useful flags:
+
+- `--once` — run a single collection cycle, log the result, and exit (connectivity check).
+- `--debug` — verbose logging, including per-collector failures. Combined with
+  `--once`, it also prints **every collected sample** (sorted, exposition style)
+  so you can diff a live cluster against the [Metrics Reference](../metrics.md).
+- `--trace` — log every gateway API response body (method, URL, status, payload).
+  Headers are never logged and the login/token-refresh responses are skipped
+  entirely, so auth tokens cannot leak. Use it when a metric you expect is
+  absent: the exporter never guesses values, so an unexpected payload shape shows
+  up as a missing sample — the trace shows what the cluster actually returned.
+
+Validating against a real cluster:
+
+```bash
+./bin/pflex_exporter --config config.yaml --once --debug --trace > validate.log
+grep -v '^{' validate.log | sort > samples.txt   # every collected sample (compare with docs/metrics.md)
+grep -F 'API trace' validate.log > trace.log     # raw API payloads for anything missing or suspicious
+```
+
+(Log lines are JSON objects on stdout, while the sample dump is plain exposition
+lines, so the two are easy to separate.)
+
 ## Local stack (Docker Compose)
 
 Bring up the exporter alongside Prometheus, Grafana (dashboards auto-provisioned), and an

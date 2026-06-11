@@ -3,7 +3,7 @@
 //
 // Usage:
 //
-//	pflex_exporter --config config.yaml [--debug] [--once]
+//	pflex_exporter --config config.yaml [--debug] [--once] [--trace]
 package main
 
 import (
@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sort"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -44,6 +46,8 @@ var (
 	configFile string
 	debug      bool
 	once       bool
+	// apiTrace backs the --trace flag (named to avoid shadowing the otel trace import).
+	apiTrace bool
 )
 
 // Server owns the HTTP server, the snapshot store, the collection loop, the per-cluster
@@ -229,6 +233,9 @@ func (s *Server) initOTLP(cfg *models.Config) error {
 	return nil
 }
 
+// buildClients constructs one PowerFlex client per configured cluster. It is the
+// single client-construction path (startup and config reload both go through
+// startCollection), so the --trace flag is plumbed here.
 func buildClients(cfg *models.Config, tp trace.TracerProvider) []powerflex.Client {
 	clients := make([]powerflex.Client, 0, len(cfg.Clusters))
 	for _, cl := range cfg.Clusters {
@@ -236,9 +243,35 @@ func buildClients(cfg *models.Config, tp trace.TracerProvider) []powerflex.Clien
 		if tp != nil {
 			opts = append(opts, powerflex.WithTracerProvider(tp))
 		}
+		if apiTrace {
+			opts = append(opts, powerflex.WithTrace(true))
+		}
 		clients = append(clients, powerflex.NewClusterClient(cl, opts...))
 	}
 	return clients
+}
+
+// dumpSamples prints every collected sample in Prometheus exposition style, sorted,
+// so a `--once --debug` run against a live cluster can be diffed against
+// docs/metrics.md to spot silently-absent metrics.
+func dumpSamples(snap *powerflex.Snapshot) {
+	names := append([]string(nil), snap.MetricNames()...)
+	sort.Strings(names)
+	for _, name := range names {
+		samples := snap.SamplesByName(name)
+		lines := make([]string, 0, len(samples))
+		for _, s := range samples {
+			parts := make([]string, 0, len(s.Labels))
+			for _, l := range s.Labels {
+				parts = append(parts, fmt.Sprintf("%s=%q", l.Name, l.Value))
+			}
+			lines = append(lines, fmt.Sprintf("%s{%s} %v", name, strings.Join(parts, ","), s.Value))
+		}
+		sort.Strings(lines)
+		for _, l := range lines {
+			fmt.Println(l)
+		}
+	}
 }
 
 // ErrorChan returns the channel that receives fatal HTTP server errors.
@@ -422,6 +455,9 @@ func main() {
 			}
 
 			if once {
+				if debug {
+					dumpSamples(server.store.Load())
+				}
 				log.Info("--once: single collection cycle complete, exiting")
 				return server.Shutdown()
 			}
@@ -443,6 +479,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "Path to configuration file (required)")
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Enable debug mode")
 	rootCmd.PersistentFlags().BoolVar(&once, "once", false, "Run a single collection cycle and exit")
+	rootCmd.PersistentFlags().BoolVar(&apiTrace, "trace", false, "Log every gateway API response body (live-cluster payload validation; auth responses are never logged; very verbose)")
 	_ = rootCmd.MarkPersistentFlagRequired("config")
 
 	if err := rootCmd.Execute(); err != nil {
