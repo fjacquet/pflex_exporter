@@ -2,7 +2,7 @@
 
 ```bash
 make cli
-export FLEX1_PASSWORD='your-monitor-password'
+export PFLEX1_PASSWORD='your-monitor-password'
 ./bin/pflex_exporter --config config.yaml
 ```
 
@@ -54,7 +54,7 @@ Bring up the exporter alongside Prometheus, Grafana (dashboards auto-provisioned
 OpenTelemetry Collector:
 
 ```bash
-FLEX1_PASSWORD='your-monitor-password' docker compose up --build
+PFLEX1_PASSWORD='your-monitor-password' docker compose up --build
 ```
 
 - Exporter metrics: <http://localhost:2112/metrics>
@@ -65,7 +65,7 @@ FLEX1_PASSWORD='your-monitor-password' docker compose up --build
 To run the **published** image instead of building locally, use the pull-based stack:
 
 ```bash
-FLEX1_PASSWORD='your-monitor-password' docker compose -f docker-compose.ghcr.yml up -d
+PFLEX1_PASSWORD='your-monitor-password' docker compose -f docker-compose.ghcr.yml up -d
 ```
 
 See [Docker deployment](../deployment/docker.md) for both stacks, image tags, and Grafana details.

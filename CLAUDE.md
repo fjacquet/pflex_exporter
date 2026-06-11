@@ -14,7 +14,7 @@ Everything CI runs is a Makefile target, so it reproduces locally.
 - `make tools` — install pinned `golangci-lint`, `cyclonedx-gomod`, `govulncheck`.
 - `make sbom` — CycloneDX SBOM (module-level, via `cyclonedx-gomod`). `make tools-sbom` installs just that tool.
 - `make release` / `make release-snapshot` — **GoReleaser** drives the release (`.goreleaser.yaml`): cross-compile + `tar.gz` archives + SBOM + checksums + GitHub Release. `release` needs a `v*` tag and `GITHUB_TOKEN` (CI path); `release-snapshot` is a local dry-run with no publish. The release SBOM stays on `cyclonedx-gomod` (not syft); GoReleaser runs sbom hooks in `./dist`, so the module path is `../`.
-- Run it: `./bin/pflex_exporter --config config.yaml [--debug] [--once] [--trace]`. Cluster secrets are `${ENV_VAR}` references in `config.yaml` (or `passwordFile`); export e.g. `FLEX1_PASSWORD` before running.
+- Run it: `./bin/pflex_exporter --config config.yaml [--debug] [--once] [--trace]`. Cluster secrets are `${ENV_VAR}` references in `config.yaml` (or `passwordFile`); export e.g. `PFLEX1_PASSWORD` before running.
 - Live-cluster validation: `--once --debug` prints every collected sample (sorted, exposition style) for diffing against `docs/metrics.md`; `--trace` logs every gateway API response body (`WithTrace` hook in `client.go` — never resty `SetDebug`, which dumps the Authorization header; login/update-token responses carry tokens in the **body** and are skipped).
 - Docs site (MkDocs Material): `uvx --with mkdocs-material --with pymdown-extensions mkdocs build --strict` (or `serve`).
 - `vendor/` is git-ignored; dependencies are managed with `go mod`.

@@ -11,12 +11,12 @@ docker pull ghcr.io/fjacquet/pflex_exporter:0.3.0   # or :latest
 ## Run
 
 Mount a config and pass cluster secrets via the environment (referenced as
-`${FLEX1_PASSWORD}` in the config):
+`${PFLEX1_PASSWORD}` in the config):
 
 ```bash
 docker run -d --name pflex_exporter \
   -p 2112:2112 \
-  -e FLEX1_PASSWORD='your-monitor-password' \
+  -e PFLEX1_PASSWORD='your-monitor-password' \
   -v "$PWD/config.yaml:/etc/pflex_exporter/config.yaml:ro" \
   ghcr.io/fjacquet/pflex_exporter:0.3.0
 ```
@@ -41,7 +41,7 @@ bundled dashboards auto-provisioned), and an OpenTelemetry Collector. It **build
 exporter image locally:
 
 ```bash
-FLEX1_PASSWORD='your-monitor-password' docker compose up --build
+PFLEX1_PASSWORD='your-monitor-password' docker compose up --build
 ```
 
 If you'd rather run the **published** image instead of building, use
@@ -49,9 +49,9 @@ If you'd rather run the **published** image instead of building, use
 
 ```bash
 # :latest
-FLEX1_PASSWORD='your-monitor-password' docker compose -f docker-compose.ghcr.yml up -d
+PFLEX1_PASSWORD='your-monitor-password' docker compose -f docker-compose.ghcr.yml up -d
 # pin a version
-PFLEX_TAG=0.2.1 FLEX1_PASSWORD='...' docker compose -f docker-compose.ghcr.yml up -d
+PFLEX_TAG=0.2.1 PFLEX1_PASSWORD='...' docker compose -f docker-compose.ghcr.yml up -d
 # refresh images later
 docker compose -f docker-compose.ghcr.yml pull
 ```

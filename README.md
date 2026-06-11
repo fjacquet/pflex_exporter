@@ -28,7 +28,7 @@ the architecture of [`nbu_exporter`](https://github.com/fjacquet/nbu_exporter).
 
 ```bash
 make cli
-export FLEX1_PASSWORD='your-monitor-password'
+export PFLEX1_PASSWORD='your-monitor-password'
 ./bin/pflex_exporter --config config.yaml
 # metrics: http://localhost:2112/metrics   health: http://localhost:2112/health
 ```

@@ -5,7 +5,7 @@ Manifests live in `deploy/kubernetes/`, wired together with kustomize.
 | File | Purpose |
 |---|---|
 | `configmap.yaml` | `config.yaml` (set clusters here; `logName: ""` for pod logs) |
-| `secret.example.yaml` | cluster passwords (`FLEX1_PASSWORD`, …) |
+| `secret.example.yaml` | cluster passwords (`PFLEX1_PASSWORD`, …) |
 | `deployment.yaml` | hardened single-replica Deployment |
 | `service.yaml` | ClusterIP exposing the `metrics` port (2112) |
 | `servicemonitor.yaml` | optional Prometheus Operator scrape config |
@@ -29,7 +29,7 @@ kubectl rollout status deploy/pflex-exporter
 - **Probes.** Liveness hits `/metrics` (process health, always 200 while serving);
   readiness hits `/health` (ready only once at least one cluster has been collected).
 - **Secrets.** Passwords come from the Secret via `envFrom` and are interpolated into
-  `config.yaml` as `${FLEX1_PASSWORD}`. Prefer an external secret manager
+  `config.yaml` as `${PFLEX1_PASSWORD}`. Prefer an external secret manager
   (External Secrets Operator, sealed-secrets, etc.) over committing the example Secret.
 
 ## Workload enrichment (optional)

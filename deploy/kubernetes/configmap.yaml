@@ -29,5 +29,5 @@ data:
       - name: flex-cluster1
         gateway: <gateway-ip-or-host>
         username: <monitor-user>
-        password: "${FLEX1_PASSWORD}"
+        password: "${PFLEX1_PASSWORD}"
         insecureSkipVerify: true

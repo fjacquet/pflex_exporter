@@ -14,10 +14,10 @@ services:
       - pflex_logs:/var/log/pflex_exporter
     environment:
       # Provide cluster connection details via the environment.
-      # config.yaml references these as ${FLEX1_GATEWAY}, ${FLEX1_USERNAME}, ${FLEX1_PASSWORD}.
-      - FLEX1_GATEWAY=${FLEX1_GATEWAY:-flex-clu1-gw01}
-      - FLEX1_USERNAME=${FLEX1_USERNAME:-flex-username}
-      - FLEX1_PASSWORD=${FLEX1_PASSWORD:-}
+      # config.yaml references these as ${PFLEX1_GATEWAY}, ${PFLEX1_USERNAME}, ${PFLEX1_PASSWORD}.
+      - PFLEX1_GATEWAY=${PFLEX1_GATEWAY:-flex-clu1-gw01}
+      - PFLEX1_USERNAME=${PFLEX1_USERNAME:-flex-username}
+      - PFLEX1_PASSWORD=${PFLEX1_PASSWORD:-}
     restart: unless-stopped
 
   prometheus:
