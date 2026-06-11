@@ -13,7 +13,10 @@ services:
       # Persist the log file (config.yaml -> logName). Owned by uid 10001 via the image.
       - pflex_logs:/var/log/pflex_exporter
     environment:
-      # Provide cluster secrets via the environment (referenced as ${FLEX1_PASSWORD}).
+      # Provide cluster connection details via the environment.
+      # config.yaml references these as ${FLEX1_GATEWAY}, ${FLEX1_USERNAME}, ${FLEX1_PASSWORD}.
+      - FLEX1_GATEWAY=${FLEX1_GATEWAY:-flex-clu1-gw01}
+      - FLEX1_USERNAME=${FLEX1_USERNAME:-flex-username}
       - FLEX1_PASSWORD=${FLEX1_PASSWORD:-}
     restart: unless-stopped
 

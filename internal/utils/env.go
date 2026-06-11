@@ -31,7 +31,7 @@ func ExpandEnv(s string) (string, error) {
 	return out, nil
 }
 
-// ResolveSecrets expands ${ENV} references in cluster gateway/password fields and
+// ResolveSecrets expands ${ENV} references in cluster gateway/username/password fields and
 // loads passwords from passwordFile when set. Mutates cfg in place.
 func ResolveSecrets(cfg *models.Config) error {
 	for i := range cfg.Clusters {
@@ -42,6 +42,12 @@ func ResolveSecrets(cfg *models.Config) error {
 			return fmt.Errorf("cluster %q gateway: %w", cl.Name, err)
 		}
 		cl.Gateway = gateway
+
+		username, err := ExpandEnv(cl.Username)
+		if err != nil {
+			return fmt.Errorf("cluster %q username: %w", cl.Name, err)
+		}
+		cl.Username = username
 
 		if cl.Password == "" && cl.PasswordFile != "" {
 			data, err := os.ReadFile(cl.PasswordFile)

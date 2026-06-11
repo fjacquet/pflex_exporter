@@ -110,6 +110,49 @@ metrics API. The detected generation is published as
 `pflex_cluster_generation{generation="gen1|gen2|unknown"}`. One process can monitor a
 mix of Gen1 and Gen2 clusters.
 
+## Environment variables / .env
+
+`gateway`, `username`, and `password` all support `${ENV_VAR}` interpolation.
+A referenced but unset variable is a startup error (fail-loud, never a silent empty value).
+
+`config.yaml` ships with all three fields parameterized as `${FLEX1_GATEWAY}`,
+`${FLEX1_USERNAME}`, and `${FLEX1_PASSWORD}`. This is the **single-cluster quickstart
+convenience**: copy `.env.example` to `.env`, fill in the three values, and
+`docker compose up` resolves them automatically.
+
+```bash
+cp .env.example .env
+# edit FLEX1_GATEWAY / FLEX1_USERNAME / FLEX1_PASSWORD
+docker compose up -d
+```
+
+`config.yaml` is the **source of truth** and is always consumed; `.env` is only a
+convenience layer for the compose stack. For production deployments (systemd, Kubernetes)
+set the variables in your own secrets manager and inject them into the process environment.
+
+### Multi-cluster
+
+For more than one cluster, add one entry per cluster with either literal values or your
+own env refs. The `FLEX1_*` names are a single-cluster convention; you can choose any
+names you like:
+
+```yaml
+clusters:
+  - name: flex-cluster1
+    gateway: "${FLEX1_GATEWAY}"
+    username: "${FLEX1_USERNAME}"
+    password: "${FLEX1_PASSWORD}"
+    insecureSkipVerify: true
+  - name: flex-cluster2
+    gateway: "${FLEX2_GATEWAY}"
+    username: "${FLEX2_USERNAME}"
+    password: "${FLEX2_PASSWORD}"
+    insecureSkipVerify: true
+```
+
+Pass the additional variables to the compose stack (e.g. in `.env` alongside
+the `FLEX1_*` entries) or inject them at the deployment level.
+
 ## Secrets
 
 Cluster passwords should not be written in plaintext. Two options:

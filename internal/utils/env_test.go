@@ -48,3 +48,29 @@ func TestResolveSecretsInterpolatesAndLoadsFile(t *testing.T) {
 		t.Errorf("file password = %q (want trimmed 'filepass')", cfg.Clusters[1].Password)
 	}
 }
+
+func TestResolveSecretsExpandsUsername(t *testing.T) {
+	t.Setenv("PFLEX_USER1", "monitor-user")
+	t.Setenv("PFLEX_PW1", "s3cr3t")
+
+	cfg := &models.Config{Clusters: []models.ClusterConfig{
+		{Name: "a", Gateway: "gw-a", Username: "${PFLEX_USER1}", Password: "${PFLEX_PW1}"},
+	}}
+
+	if err := ResolveSecrets(cfg); err != nil {
+		t.Fatalf("ResolveSecrets: %v", err)
+	}
+	if cfg.Clusters[0].Username != "monitor-user" {
+		t.Errorf("username = %q, want %q", cfg.Clusters[0].Username, "monitor-user")
+	}
+}
+
+func TestResolveSecretsUnsetUsernameVarFailsLoudly(t *testing.T) {
+	cfg := &models.Config{Clusters: []models.ClusterConfig{
+		{Name: "a", Gateway: "gw-a", Username: "${PFLEX_DEFINITELY_UNSET_USER}", Password: "pw"},
+	}}
+
+	if err := ResolveSecrets(cfg); err == nil {
+		t.Error("expected error for unset username variable, got nil")
+	}
+}
