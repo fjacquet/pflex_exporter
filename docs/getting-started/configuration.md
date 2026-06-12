@@ -126,9 +126,18 @@ cp .env.example .env
 docker compose up -d
 ```
 
+### .env loading
+
+The `pflex_exporter` binary loads a `.env` file natively at startup — from the working
+directory first, then next to the config file — so `cp .env.example .env` works for
+bare-metal and systemd runs exactly like it does under docker compose.
+Already-set environment variables **always take precedence** over `.env` values,
+so secret injection (systemd `Environment=`, Kubernetes secrets, CI) can never be
+shadowed by a stray file.
+
 `config.yaml` is the **source of truth** and is always consumed; `.env` is only a
-convenience layer for the compose stack. For production deployments (systemd, Kubernetes)
-set the variables in your own secrets manager and inject them into the process environment.
+convenience layer. For production deployments (systemd, Kubernetes) set the variables in
+your own secrets manager and inject them into the process environment.
 
 ### Multi-cluster
 

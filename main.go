@@ -436,6 +436,13 @@ func main() {
 		Short:   "Prometheus/OTLP exporter for Dell PowerFlex Gen1",
 		Long:    "PowerFlex Exporter collects metrics from PowerFlex clusters (Gen1 and Gen2, auto-detected) and exposes them via Prometheus and OTLP.",
 		RunE: func(_ *cobra.Command, _ []string) error {
+			// Load .env before the initial config parse so ${ENV_VAR} refs
+			// in config.yaml are already resolved. The reload path (SIGHUP /
+			// fsnotify) does not need this: LoadDotEnv is a startup-only call
+			// that seeds the process environment once; subsequent reloads see
+			// the same already-set variables.
+			utils.LoadDotEnv(configFile)
+
 			cfg, err := validateConfig(configFile)
 			if err != nil {
 				return err
