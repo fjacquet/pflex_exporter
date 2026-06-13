@@ -5,7 +5,7 @@ The exporter is configured with a single YAML file (default example: `config.yam
 ```yaml
 server:
   host: "0.0.0.0"
-  port: "2112"
+  port: "2113"
   uri: "/metrics"
   logName: "/var/log/pflex_exporter/pflex-exporter.log" # absolute; "" -> stdout only (recommended under systemd/k8s)
 
