@@ -15,7 +15,7 @@ Mount a config and pass cluster secrets via the environment (referenced as
 
 ```bash
 docker run -d --name pflex_exporter \
-  -p 2112:2112 \
+  -p 2113:2113 \
   -e PFLEX1_PASSWORD='your-monitor-password' \
   -v "$PWD/config.yaml:/etc/pflex_exporter/config.yaml:ro" \
   ghcr.io/fjacquet/pflex_exporter:0.3.0
@@ -58,7 +58,7 @@ docker compose -f docker-compose.ghcr.yml pull
 
 | Service | Port | Purpose |
 |---|---|---|
-| `pflex_exporter` | 2112 | `/metrics` + `/health` |
+| `pflex_exporter` | 2113 | `/metrics` + `/health` |
 | `prometheus` | 9090 | scrapes the exporter (`prometheus.yml`) |
 | `grafana` | 3000 | dashboards (login `admin` / `admin`), Prometheus datasource + `gen1`/`gen2` folders auto-provisioned |
 | `otel-collector` | 4317 / 8889 | receives the OTLP push (when enabled) and re-exposes it |

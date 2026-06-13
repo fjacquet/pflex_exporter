@@ -11,7 +11,7 @@ func TestValidateAppliesDefaults(t *testing.T) {
 	if err := cfg.Validate(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if cfg.Server.Port != "2112" || cfg.Server.URI != "/metrics" {
+	if cfg.Server.Port != "2113" || cfg.Server.URI != "/metrics" {
 		t.Errorf("server defaults not applied: %+v", cfg.Server)
 	}
 	if cfg.Collection.Interval != "10s" || cfg.Collection.Timeout != "8s" {

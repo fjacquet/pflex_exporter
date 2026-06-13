@@ -30,7 +30,7 @@ the architecture of [`nbu_exporter`](https://github.com/fjacquet/nbu_exporter).
 make cli
 export PFLEX1_PASSWORD='your-monitor-password'
 ./bin/pflex_exporter --config config.yaml
-# metrics: http://localhost:2112/metrics   health: http://localhost:2112/health
+# metrics: http://localhost:2113/metrics   health: http://localhost:2113/health
 ```
 
 Or install with Homebrew (macOS): `brew install --cask fjacquet/tap/pflex_exporter`,

@@ -7,7 +7,7 @@ services:
     pull_policy: build
     container_name: pflex_exporter
     ports:
-      - "2112:2112"
+      - "2113:2113"
     volumes:
       - ./config.yaml:/etc/pflex_exporter/config.yaml:ro
       # Persist the log file (config.yaml -> logName). Owned by uid 10001 via the image.

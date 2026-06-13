@@ -30,7 +30,7 @@ spec:
           args: ["--config", "/etc/pflex_exporter/config.yaml"]
           ports:
             - name: metrics
-              containerPort: 2112
+              containerPort: 2113
           envFrom:
             - secretRef:
                 name: pflex-exporter-secrets
