@@ -12,7 +12,7 @@
   ],
   "timezone": "",
   "schemaVersion": 39,
-  "version": 3,
+  "version": 4,
   "time": {
     "from": "now-6h",
     "to": "now"
@@ -222,7 +222,7 @@
     {
       "id": 5,
       "type": "stat",
-      "title": "Compression Ratio",
+      "title": "Worst Component Health",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -235,7 +235,43 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "short",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Healthy",
+                  "color": "green"
+                },
+                "1": {
+                  "text": "Degraded",
+                  "color": "yellow"
+                },
+                "2": {
+                  "text": "Failed",
+                  "color": "red"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -252,8 +288,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "max by (cluster) (pflex_cluster_compression_ratio{cluster=~\"$cluster\"})",
-          "legendFormat": "Compression Ratio"
+          "expr": "max(pflex_sds_health{cluster=~\"$cluster\"} or pflex_device_health{cluster=~\"$cluster\"} or pflex_sdc_health{cluster=~\"$cluster\"})",
+          "legendFormat": "Worst Component Health"
         }
       ]
     },
@@ -348,110 +384,6 @@
     },
     {
       "id": 7,
-      "type": "table",
-      "title": "Device Health & Wear",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 11
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "filterable": true,
-            "align": "auto"
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "State"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "0": {
-                        "text": "Healthy",
-                        "color": "green"
-                      },
-                      "1": {
-                        "text": "Degraded",
-                        "color": "yellow"
-                      },
-                      "2": {
-                        "text": "Failed",
-                        "color": "red"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-text"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true,
-        "footer": {
-          "show": false
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "pflex_device_info{cluster=~\"$cluster\"}",
-          "format": "table",
-          "instant": true
-        }
-      ],
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "__name__": true,
-              "Value": true,
-              "job": true,
-              "instance": true,
-              "cluster_id": true,
-              "device_id": true,
-              "storage_pool_id": true,
-              "protection_domain_id": true,
-              "sds_id": true
-            },
-            "renameByName": {
-              "device_name": "Device",
-              "sds": "SDS",
-              "storage_pool_name": "Pool",
-              "device_state": "State",
-              "temperature_state": "Temp",
-              "ssd_end_of_life_state": "SSD EOL",
-              "error_state": "Error",
-              "cluster": "Cluster"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": 8,
       "type": "row",
       "title": "Capacity & Resilience",
       "collapsed": false,
@@ -459,11 +391,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 19
+        "y": 11
       }
     },
     {
-      "id": 9,
+      "id": 8,
       "type": "timeseries",
       "title": "Capacity (Used / Max)",
       "datasource": {
@@ -474,7 +406,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 20
+        "y": 12
       },
       "fieldConfig": {
         "defaults": {
@@ -515,7 +447,7 @@
       ]
     },
     {
-      "id": 10,
+      "id": 9,
       "type": "timeseries",
       "title": "Capacity At Risk (KiB)",
       "datasource": {
@@ -526,7 +458,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 20
+        "y": 12
       },
       "fieldConfig": {
         "defaults": {
@@ -566,18 +498,13 @@
         },
         {
           "refId": "C",
-          "expr": "sum by (cluster) (pflex_cluster_degraded_healthy_capacity_in_kb{cluster=~\"$cluster\"})",
-          "legendFormat": "degraded(healthy)"
-        },
-        {
-          "refId": "D",
           "expr": "sum by (cluster) (pflex_cluster_spare_capacity_in_kb{cluster=~\"$cluster\"})",
           "legendFormat": "spare"
         }
       ]
     },
     {
-      "id": 11,
+      "id": 10,
       "type": "timeseries",
       "title": "Rebuild / Rebalance Remaining (KiB)",
       "datasource": {
@@ -588,7 +515,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 28
+        "y": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -634,7 +561,7 @@
       ]
     },
     {
-      "id": 12,
+      "id": 11,
       "type": "timeseries",
       "title": "Snapshot Capacity (KiB)",
       "datasource": {
@@ -645,7 +572,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 28
+        "y": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -680,18 +607,13 @@
         },
         {
           "refId": "B",
-          "expr": "sum by (cluster) (pflex_cluster_net_snapshot_capacity_in_kb{cluster=~\"$cluster\"})",
-          "legendFormat": "net snapshot"
-        },
-        {
-          "refId": "C",
           "expr": "sum by (cluster) (pflex_cluster_snap_capacity_in_use_in_kb{cluster=~\"$cluster\"})",
           "legendFormat": "in use"
         }
       ]
     },
     {
-      "id": 13,
+      "id": 12,
       "type": "row",
       "title": "Performance",
       "collapsed": false,
@@ -699,11 +621,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 28
       }
     },
     {
-      "id": 14,
+      "id": 13,
       "type": "timeseries",
       "title": "Total IOPS (read + write)",
       "datasource": {
@@ -714,7 +636,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 37
+        "y": 29
       },
       "fieldConfig": {
         "defaults": {
@@ -750,9 +672,9 @@
       ]
     },
     {
-      "id": 15,
+      "id": 14,
       "type": "timeseries",
-      "title": "Total Bandwidth (KB/s)",
+      "title": "Total Bandwidth",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -761,7 +683,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 37
+        "y": 29
       },
       "fieldConfig": {
         "defaults": {
@@ -797,7 +719,7 @@
       ]
     },
     {
-      "id": 16,
+      "id": 15,
       "type": "timeseries",
       "title": "User IO Latency",
       "datasource": {
@@ -808,7 +730,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 37
+        "y": 29
       },
       "fieldConfig": {
         "defaults": {
@@ -844,54 +766,7 @@
       ]
     },
     {
-      "id": 17,
-      "type": "timeseries",
-      "title": "Rebuild / Rebalance IOPS",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 45
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "iops",
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "showPoints": "never"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull",
-            "max"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (cluster, op) (pflex_cluster_iops{cluster=~\"$cluster\", op=~\"fwdRebuild|bckRebuild|normRebuild|rebalance\"})",
-          "legendFormat": "{{op}}"
-        }
-      ]
-    },
-    {
-      "id": 18,
+      "id": 16,
       "type": "row",
       "title": "Inventory",
       "collapsed": false,
@@ -899,11 +774,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 53
+        "y": 37
       }
     },
     {
-      "id": 19,
+      "id": 17,
       "type": "stat",
       "title": "Volumes",
       "datasource": {
@@ -914,7 +789,7 @@
         "h": 4,
         "w": 8,
         "x": 0,
-        "y": 54
+        "y": 38
       },
       "fieldConfig": {
         "defaults": {
@@ -941,7 +816,7 @@
       ]
     },
     {
-      "id": 20,
+      "id": 18,
       "type": "stat",
       "title": "SDS",
       "datasource": {
@@ -952,7 +827,7 @@
         "h": 4,
         "w": 8,
         "x": 8,
-        "y": 54
+        "y": 38
       },
       "fieldConfig": {
         "defaults": {
@@ -979,7 +854,7 @@
       ]
     },
     {
-      "id": 21,
+      "id": 19,
       "type": "stat",
       "title": "Devices",
       "datasource": {
@@ -990,7 +865,7 @@
         "h": 4,
         "w": 8,
         "x": 16,
-        "y": 54
+        "y": 38
       },
       "fieldConfig": {
         "defaults": {
@@ -1017,5 +892,5 @@
       ]
     }
   ],
-  "description": "Cluster health, capacity & resilience, performance, and inventory at a glance. Detail lives in the per-object dashboards."
+  "description": "Cluster health, capacity & resilience, performance, and inventory at a glance."
 }

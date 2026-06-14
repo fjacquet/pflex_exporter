@@ -3,11 +3,10 @@
   "uid": "pflex-g2-storage-node",
   "tags": [
     "powerflex",
-    "gen2",
     "pflex_exporter"
   ],
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "time": {
     "from": "now-6h",
     "to": "now"
@@ -29,7 +28,7 @@
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "query": "label_values(pflex_cluster_generation{generation=\"gen2\"}, cluster)",
+        "query": "label_values(pflex_up, cluster)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
@@ -43,148 +42,207 @@
   "panels": [
     {
       "id": 1,
-      "title": "Storage Node Device IOPS",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 0
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "iops"
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (storage_node_name, direction) (pflex_storagenode_iops{cluster=~\"$cluster\", op=\"device\"})",
-          "legendFormat": "{{storage_node_name}} {{direction}}"
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "title": "Storage Node Front-End IOPS",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 0
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "iops"
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (storage_node_name, direction) (pflex_storagenode_iops{cluster=~\"$cluster\", op=\"storage_fe\"})",
-          "legendFormat": "{{storage_node_name}} {{direction}}"
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "title": "Storage Node Device Bandwidth (bytes/s)",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "Bps"
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (storage_node_name, direction) (pflex_storagenode_bandwidth_bytes_per_second{cluster=~\"$cluster\", op=\"device\"})",
-          "legendFormat": "{{storage_node_name}} {{direction}}"
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "title": "Storage Node Device Latency (\u00b5s)",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "\u00b5s"
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "avg by (storage_node_name, direction) (pflex_storagenode_latency_microseconds{cluster=~\"$cluster\", op=\"device\"})",
-          "legendFormat": "{{storage_node_name}} {{direction}}"
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "title": "SDT Targets (WS2)",
       "type": "row",
+      "title": "Health",
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 0
       }
     },
     {
-      "id": 6,
-      "title": "SDT Health (0=ok,1=degraded,2=failed)",
+      "id": 2,
+      "type": "stat",
+      "title": "Worst Node Health",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Healthy",
+                  "color": "green"
+                },
+                "1": {
+                  "text": "Degraded",
+                  "color": "yellow"
+                },
+                "2": {
+                  "text": "Failed",
+                  "color": "red"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(pflex_storagenode_health{cluster=~\"$cluster\"})",
+          "legendFormat": "Worst Node Health"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "state-timeline",
+      "title": "Node & SDT Health Over Time",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 18,
+        "x": 6,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 80,
+            "lineWidth": 0
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Healthy",
+                  "color": "green"
+                },
+                "1": {
+                  "text": "Degraded",
+                  "color": "yellow"
+                },
+                "2": {
+                  "text": "Failed",
+                  "color": "red"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "mergeValues": true,
+        "showValue": "never",
+        "rowHeight": 0.9,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by (storage_node_name) (pflex_storagenode_health{cluster=~\"$cluster\"})",
+          "legendFormat": "{{storage_node_name}}"
+        },
+        {
+          "refId": "B",
+          "expr": "max by (sdt_name) (pflex_sdt_health{cluster=~\"$cluster\"})",
+          "legendFormat": "SDT {{sdt_name}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "row",
+      "title": "Performance",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      }
+    },
+    {
+      "id": 5,
       "type": "timeseries",
+      "title": "IOPS",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
       },
       "gridPos": {
         "h": 8,
-        "w": 24,
+        "w": 8,
         "x": 0,
-        "y": 17
+        "y": 8
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "iops",
           "custom": {
             "drawStyle": "line",
-            "fillOpacity": 10
+            "fillOpacity": 10,
+            "showPoints": "never"
           }
         },
         "overrides": []
@@ -199,16 +257,112 @@
           ]
         },
         "tooltip": {
-          "mode": "multi"
+          "mode": "multi",
+          "sort": "desc"
         }
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "max by (sdt_name) (pflex_sdt_health{cluster=~\"$cluster\"})",
-          "legendFormat": "{{sdt_name}}"
+          "expr": "sum by (storage_node_name) (pflex_storagenode_iops{cluster=~\"$cluster\", op=\"total\"})",
+          "legendFormat": "{{storage_node_name}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Bandwidth",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (storage_node_name) (pflex_storagenode_bandwidth_bytes_per_second{cluster=~\"$cluster\", op=\"total\"})",
+          "legendFormat": "{{storage_node_name}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Latency",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "\u00b5s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg by (storage_node_name) (pflex_storagenode_latency_microseconds{cluster=~\"$cluster\", op=\"device\"})",
+          "legendFormat": "{{storage_node_name}}"
         }
       ]
     }
-  ]
+  ],
+  "description": "Storage node + SDT health and performance."
 }

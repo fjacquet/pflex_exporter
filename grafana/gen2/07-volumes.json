@@ -1,48 +1,198 @@
 {
   "title": "PowerFlex Gen2 - Volumes",
   "uid": "pflex-g2-volumes",
-  "tags": ["powerflex", "gen2", "pflex_exporter"],
+  "tags": [
+    "powerflex",
+    "pflex_exporter"
+  ],
   "schemaVersion": 39,
-  "version": 1,
-  "time": { "from": "now-6h", "to": "now" },
+  "version": 2,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
   "refresh": "30s",
   "templating": {
     "list": [
-      { "name": "datasource", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 },
-      { "name": "cluster", "type": "query", "datasource": { "type": "prometheus", "uid": "${datasource}" }, "query": "label_values(pflex_cluster_generation{generation=\"gen2\"}, cluster)", "refresh": 2, "includeAll": true, "multi": true, "current": { "text": "All", "value": "$__all" } }
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 0
+      },
+      {
+        "name": "cluster",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "query": "label_values(pflex_up, cluster)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
     ]
   },
   "panels": [
     {
-      "id": 1, "title": "Top Volumes by IOPS", "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-      "fieldConfig": { "defaults": { "unit": "iops" }, "overrides": [] },
-      "targets": [ { "refId": "A", "expr": "topk(10, sum by (volume_name) (pflex_volume_iops{cluster=~\"$cluster\", op=\"host\"}))", "legendFormat": "{{volume_name}}" } ]
+      "id": 1,
+      "type": "row",
+      "title": "Performance",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
     },
     {
-      "id": 2, "title": "Top Volumes by Bandwidth (bytes/s)", "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-      "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
-      "targets": [ { "refId": "A", "expr": "topk(10, sum by (volume_name) (pflex_volume_bandwidth_bytes_per_second{cluster=~\"$cluster\", op=\"host\"}))", "legendFormat": "{{volume_name}}" } ]
-    },
-    {
-      "id": 3, "title": "Volume Latency (µs)", "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "fieldConfig": { "defaults": { "unit": "µs" }, "overrides": [] },
-      "targets": [ { "refId": "A", "expr": "avg by (volume_name, direction) (pflex_volume_latency_microseconds{cluster=~\"$cluster\", op=\"host\"})", "legendFormat": "{{volume_name}} {{direction}}" } ]
-    },
-    {
-      "id": 4, "title": "Logical Provisioned vs Used (bytes)", "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "id": 2,
+      "type": "timeseries",
+      "title": "IOPS",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "iops",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
       "targets": [
-        { "refId": "A", "expr": "sum by (cluster) (pflex_volume_logical_provisioned{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} provisioned" },
-        { "refId": "B", "expr": "sum by (cluster) (pflex_volume_logical_used{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} used" }
+        {
+          "refId": "A",
+          "expr": "sum by (volume_name) (pflex_volume_iops{cluster=~\"$cluster\", op=\"total\"})",
+          "legendFormat": "{{volume_name}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Bandwidth",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (volume_name) (pflex_volume_bandwidth_bytes_per_second{cluster=~\"$cluster\", op=\"total\"})",
+          "legendFormat": "{{volume_name}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Latency",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "\u00b5s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg by (volume_name) (pflex_volume_latency_microseconds{cluster=~\"$cluster\", op=\"host\"})",
+          "legendFormat": "{{volume_name}}"
+        }
       ]
     }
-  ]
+  ],
+  "description": "Volume performance and latency (Gen2)."
 }
