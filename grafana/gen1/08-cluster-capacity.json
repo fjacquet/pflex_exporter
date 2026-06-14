@@ -1,51 +1,301 @@
 {
   "title": "PowerFlex Gen1 - Cluster Capacity",
   "uid": "pflex-g1-capacity",
-  "tags": ["powerflex", "gen1", "pflex_exporter"],
+  "tags": [
+    "powerflex",
+    "gen1",
+    "pflex_exporter"
+  ],
   "schemaVersion": 39,
   "version": 1,
-  "time": { "from": "now-24h", "to": "now" },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
   "refresh": "1m",
   "templating": {
     "list": [
-      { "name": "datasource", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 },
-      { "name": "cluster", "type": "query", "datasource": { "type": "prometheus", "uid": "${datasource}" }, "query": "label_values(pflex_up, cluster)", "refresh": 2, "includeAll": true, "multi": true, "current": { "text": "All", "value": "$__all" } }
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 0
+      },
+      {
+        "name": "cluster",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "query": "label_values(pflex_up, cluster)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
     ]
   },
   "panels": [
     {
-      "id": 1, "title": "Capacity Used %", "type": "gauge",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
-      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
-      "targets": [ { "refId": "A", "expr": "100 * sum by (cluster) (pflex_cluster_capacity_in_use_in_kb{cluster=~\"$cluster\"}) / sum by (cluster) (pflex_cluster_max_capacity_in_kb{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}}" } ]
-    },
-    {
-      "id": 2, "title": "Capacity Breakdown (KiB)", "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 0 },
-      "fieldConfig": { "defaults": { "unit": "deckbytes" }, "overrides": [] },
+      "id": 1,
+      "title": "Capacity Used %",
+      "type": "gauge",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
       "targets": [
-        { "refId": "A", "expr": "sum by (cluster) (pflex_cluster_max_capacity_in_kb{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} max" },
-        { "refId": "B", "expr": "sum by (cluster) (pflex_cluster_capacity_in_use_in_kb{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} used" },
-        { "refId": "C", "expr": "sum by (cluster) (pflex_cluster_spare_capacity_in_kb{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} spare" }
+        {
+          "refId": "A",
+          "expr": "100 * sum by (cluster) (pflex_cluster_capacity_in_use_in_kb{cluster=~\"$cluster\"}) / sum by (cluster) (pflex_cluster_max_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "{{cluster}}"
+        }
       ]
     },
     {
-      "id": 3, "title": "Compression Ratio", "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "fieldConfig": { "defaults": { "unit": "none", "decimals": 2 }, "overrides": [] },
-      "targets": [ { "refId": "A", "expr": "max by (cluster) (pflex_cluster_compression_ratio{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}}" } ]
+      "id": 2,
+      "title": "Capacity Breakdown (KiB)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "deckbytes"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cluster) (pflex_cluster_max_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "{{cluster}} max"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (cluster) (pflex_cluster_capacity_in_use_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "{{cluster}} used"
+        },
+        {
+          "refId": "C",
+          "expr": "sum by (cluster) (pflex_cluster_spare_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "{{cluster}} spare"
+        }
+      ]
     },
     {
-      "id": 4, "title": "Thin Allocated vs Thick In Use (KiB)", "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "fieldConfig": { "defaults": { "unit": "deckbytes" }, "overrides": [] },
+      "id": 3,
+      "title": "Compression Ratio",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 2
+        },
+        "overrides": []
+      },
       "targets": [
-        { "refId": "A", "expr": "sum by (cluster) (pflex_cluster_thin_capacity_allocated_in_kb{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} thin" },
-        { "refId": "B", "expr": "sum by (cluster) (pflex_cluster_thick_capacity_in_use_in_kb{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} thick" }
+        {
+          "refId": "A",
+          "expr": "max by (cluster) (pflex_cluster_compression_ratio{cluster=~\"$cluster\"})",
+          "legendFormat": "{{cluster}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Thin Allocated vs Thick In Use (KiB)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "deckbytes"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cluster) (pflex_cluster_thin_capacity_allocated_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "{{cluster}} thin"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (cluster) (pflex_cluster_thick_capacity_in_use_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "{{cluster}} thick"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Resilience (WS2)",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      }
+    },
+    {
+      "id": 6,
+      "title": "Capacity At Risk (KiB)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "deckbytes",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cluster) (pflex_cluster_degraded_failed_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "degraded+failed"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (cluster) (pflex_cluster_failed_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "failed"
+        },
+        {
+          "refId": "C",
+          "expr": "sum by (cluster) (pflex_cluster_degraded_healthy_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "degraded(healthy)"
+        },
+        {
+          "refId": "D",
+          "expr": "sum by (cluster) (pflex_cluster_spare_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "spare"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Snapshot Capacity (KiB)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "deckbytes",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cluster) (pflex_cluster_snapshot_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "snapshot"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (cluster) (pflex_cluster_net_snapshot_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "net snapshot"
+        },
+        {
+          "refId": "C",
+          "expr": "sum by (cluster) (pflex_cluster_snap_capacity_in_use_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "in use"
+        }
       ]
     }
   ]

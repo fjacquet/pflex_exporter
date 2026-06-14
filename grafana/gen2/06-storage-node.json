@@ -1,45 +1,214 @@
 {
   "title": "PowerFlex Gen2 - Storage Node",
   "uid": "pflex-g2-storage-node",
-  "tags": ["powerflex", "gen2", "pflex_exporter"],
+  "tags": [
+    "powerflex",
+    "gen2",
+    "pflex_exporter"
+  ],
   "schemaVersion": 39,
   "version": 1,
-  "time": { "from": "now-6h", "to": "now" },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
   "refresh": "30s",
   "templating": {
     "list": [
-      { "name": "datasource", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 },
-      { "name": "cluster", "type": "query", "datasource": { "type": "prometheus", "uid": "${datasource}" }, "query": "label_values(pflex_cluster_generation{generation=\"gen2\"}, cluster)", "refresh": 2, "includeAll": true, "multi": true, "current": { "text": "All", "value": "$__all" } }
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 0
+      },
+      {
+        "name": "cluster",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "query": "label_values(pflex_cluster_generation{generation=\"gen2\"}, cluster)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
     ]
   },
   "panels": [
     {
-      "id": 1, "title": "Storage Node Device IOPS", "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-      "fieldConfig": { "defaults": { "unit": "iops" }, "overrides": [] },
-      "targets": [ { "refId": "A", "expr": "sum by (storage_node_name, direction) (pflex_storagenode_iops{cluster=~\"$cluster\", op=\"device\"})", "legendFormat": "{{storage_node_name}} {{direction}}" } ]
+      "id": 1,
+      "title": "Storage Node Device IOPS",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "iops"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (storage_node_name, direction) (pflex_storagenode_iops{cluster=~\"$cluster\", op=\"device\"})",
+          "legendFormat": "{{storage_node_name}} {{direction}}"
+        }
+      ]
     },
     {
-      "id": 2, "title": "Storage Node Front-End IOPS", "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-      "fieldConfig": { "defaults": { "unit": "iops" }, "overrides": [] },
-      "targets": [ { "refId": "A", "expr": "sum by (storage_node_name, direction) (pflex_storagenode_iops{cluster=~\"$cluster\", op=\"storage_fe\"})", "legendFormat": "{{storage_node_name}} {{direction}}" } ]
+      "id": 2,
+      "title": "Storage Node Front-End IOPS",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "iops"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (storage_node_name, direction) (pflex_storagenode_iops{cluster=~\"$cluster\", op=\"storage_fe\"})",
+          "legendFormat": "{{storage_node_name}} {{direction}}"
+        }
+      ]
     },
     {
-      "id": 3, "title": "Storage Node Device Bandwidth (bytes/s)", "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
-      "targets": [ { "refId": "A", "expr": "sum by (storage_node_name, direction) (pflex_storagenode_bandwidth_bytes_per_second{cluster=~\"$cluster\", op=\"device\"})", "legendFormat": "{{storage_node_name}} {{direction}}" } ]
+      "id": 3,
+      "title": "Storage Node Device Bandwidth (bytes/s)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (storage_node_name, direction) (pflex_storagenode_bandwidth_bytes_per_second{cluster=~\"$cluster\", op=\"device\"})",
+          "legendFormat": "{{storage_node_name}} {{direction}}"
+        }
+      ]
     },
     {
-      "id": 4, "title": "Storage Node Device Latency (µs)", "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "fieldConfig": { "defaults": { "unit": "µs" }, "overrides": [] },
-      "targets": [ { "refId": "A", "expr": "avg by (storage_node_name, direction) (pflex_storagenode_latency_microseconds{cluster=~\"$cluster\", op=\"device\"})", "legendFormat": "{{storage_node_name}} {{direction}}" } ]
+      "id": 4,
+      "title": "Storage Node Device Latency (\u00b5s)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "\u00b5s"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg by (storage_node_name, direction) (pflex_storagenode_latency_microseconds{cluster=~\"$cluster\", op=\"device\"})",
+          "legendFormat": "{{storage_node_name}} {{direction}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "SDT Targets (WS2)",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      }
+    },
+    {
+      "id": 6,
+      "title": "SDT Health (0=ok,1=degraded,2=failed)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by (sdt_name) (pflex_sdt_health{cluster=~\"$cluster\"})",
+          "legendFormat": "{{sdt_name}}"
+        }
+      ]
     }
   ]
 }

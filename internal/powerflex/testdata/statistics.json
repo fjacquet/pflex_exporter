@@ -42,7 +42,12 @@
       "numOccured": 5,
       "numSeconds": 1,
       "totalWeightInKb": 250
-    }
+    },
+    "degradedFailedCapacityInKb": 2048,
+    "failedCapacityInKb": 0,
+    "spareCapacityInKb": 8192,
+    "snapshotCapacityInKb": 3072,
+    "netSnapshotCapacityInKb": 1536
   },
   "ProtectionDomain": {
     "pd1": {
@@ -122,7 +127,9 @@
         "numOccured": 5,
         "numSeconds": 1,
         "totalWeightInKb": 250
-      }
+      },
+      "degradedFailedCapacityInKb": 1024,
+      "failedCapacityInKb": 0
     }
   },
   "Sds": {

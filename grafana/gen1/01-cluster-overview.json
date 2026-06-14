@@ -1,14 +1,22 @@
 {
-  "annotations": { "list": [] },
+  "annotations": {
+    "list": []
+  },
   "editable": true,
   "graphTooltip": 0,
   "title": "PowerFlex - Cluster Overview",
   "uid": "pflex-cluster-overview",
-  "tags": ["powerflex", "pflex_exporter"],
+  "tags": [
+    "powerflex",
+    "pflex_exporter"
+  ],
   "timezone": "",
   "schemaVersion": 39,
   "version": 1,
-  "time": { "from": "now-6h", "to": "now" },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
   "refresh": "30s",
   "templating": {
     "list": [
@@ -22,12 +30,18 @@
       {
         "name": "cluster",
         "type": "query",
-        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
         "query": "label_values(pflex_up, cluster)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
-        "current": { "text": "All", "value": "$__all" }
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
       }
     ]
   },
@@ -36,20 +50,66 @@
       "id": 1,
       "title": "Clusters Up",
       "type": "stat",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
-      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }] }, "overrides": [] },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
       "targets": [
-        { "refId": "A", "expr": "pflex_up{cluster=~\"$cluster\"}", "legendFormat": "{{cluster}}" }
+        {
+          "refId": "A",
+          "expr": "pflex_up{cluster=~\"$cluster\"}",
+          "legendFormat": "{{cluster}}"
+        }
       ]
     },
     {
       "id": 2,
       "title": "Capacity Used %",
       "type": "gauge",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 0 },
-      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
@@ -62,12 +122,33 @@
       "id": 3,
       "title": "Capacity (Used / Max)",
       "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-      "fieldConfig": { "defaults": { "unit": "deckbytes" }, "overrides": [] },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "deckbytes"
+        },
+        "overrides": []
+      },
       "targets": [
-        { "refId": "A", "expr": "sum by (cluster) (pflex_cluster_capacity_in_use_in_kb{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} used" },
-        { "refId": "B", "expr": "sum by (cluster) (pflex_cluster_max_capacity_in_kb{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}} max" }
+        {
+          "refId": "A",
+          "expr": "sum by (cluster) (pflex_cluster_capacity_in_use_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "{{cluster}} used"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (cluster) (pflex_cluster_max_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "{{cluster}} max"
+        }
       ]
     },
     {
@@ -75,11 +156,28 @@
       "title": "Total IOPS (read + write)",
       "type": "timeseries",
       "description": "iops is a pre-derived per-second gauge from the PowerFlex API; aggregate with sum, never rate().",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "fieldConfig": { "defaults": { "unit": "iops" }, "overrides": [] },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "iops"
+        },
+        "overrides": []
+      },
       "targets": [
-        { "refId": "A", "expr": "sum by (cluster, direction) (pflex_cluster_iops{cluster=~\"$cluster\", op=\"total\"})", "legendFormat": "{{cluster}} {{direction}}" }
+        {
+          "refId": "A",
+          "expr": "sum by (cluster, direction) (pflex_cluster_iops{cluster=~\"$cluster\", op=\"total\"})",
+          "legendFormat": "{{cluster}} {{direction}}"
+        }
       ]
     },
     {
@@ -87,44 +185,233 @@
       "title": "Total Bandwidth (KB/s)",
       "type": "timeseries",
       "description": "bandwidth is a pre-derived per-second gauge (KB/s); aggregate with sum, never rate().",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "fieldConfig": { "defaults": { "unit": "KBs" }, "overrides": [] },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "KBs"
+        },
+        "overrides": []
+      },
       "targets": [
-        { "refId": "A", "expr": "sum by (cluster, direction) (pflex_cluster_bandwidth_kb_per_second{cluster=~\"$cluster\", op=\"total\"})", "legendFormat": "{{cluster}} {{direction}}" }
+        {
+          "refId": "A",
+          "expr": "sum by (cluster, direction) (pflex_cluster_bandwidth_kb_per_second{cluster=~\"$cluster\", op=\"total\"})",
+          "legendFormat": "{{cluster}} {{direction}}"
+        }
       ]
     },
     {
       "id": 6,
       "title": "User IO Latency",
       "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
-      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
       "targets": [
-        { "refId": "A", "expr": "avg by (cluster, direction) (pflex_cluster_latency{cluster=~\"$cluster\", op=\"userDataSdc\"})", "legendFormat": "{{cluster}} {{direction}}" }
+        {
+          "refId": "A",
+          "expr": "avg by (cluster, direction) (pflex_cluster_latency{cluster=~\"$cluster\", op=\"userDataSdc\"})",
+          "legendFormat": "{{cluster}} {{direction}}"
+        }
       ]
     },
     {
       "id": 7,
       "title": "Rebuild / Rebalance IOPS",
       "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
-      "fieldConfig": { "defaults": { "unit": "iops" }, "overrides": [] },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "iops"
+        },
+        "overrides": []
+      },
       "targets": [
-        { "refId": "A", "expr": "sum by (cluster, op) (pflex_cluster_iops{cluster=~\"$cluster\", op=~\"fwdRebuild|bckRebuild|normRebuild|rebalance\"})", "legendFormat": "{{cluster}} {{op}}" }
+        {
+          "refId": "A",
+          "expr": "sum by (cluster, op) (pflex_cluster_iops{cluster=~\"$cluster\", op=~\"fwdRebuild|bckRebuild|normRebuild|rebalance\"})",
+          "legendFormat": "{{cluster}} {{op}}"
+        }
       ]
     },
     {
       "id": 8,
       "title": "Compression Ratio",
       "type": "stat",
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 4 },
-      "fieldConfig": { "defaults": { "unit": "none", "decimals": 2 }, "overrides": [] },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 2
+        },
+        "overrides": []
+      },
       "targets": [
-        { "refId": "A", "expr": "max by (cluster) (pflex_cluster_compression_ratio{cluster=~\"$cluster\"})", "legendFormat": "{{cluster}}" }
+        {
+          "refId": "A",
+          "expr": "max by (cluster) (pflex_cluster_compression_ratio{cluster=~\"$cluster\"})",
+          "legendFormat": "{{cluster}}"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Inventory (WS2)",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      }
+    },
+    {
+      "id": 10,
+      "title": "Volumes",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 25
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cluster) (pflex_cluster_num_of_volumes{cluster=~\"$cluster\"})",
+          "legendFormat": "Volumes"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "SDS",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 25
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cluster) (pflex_cluster_num_of_sds{cluster=~\"$cluster\"})",
+          "legendFormat": "SDS"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Devices",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 25
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cluster) (pflex_cluster_num_of_devices{cluster=~\"$cluster\"})",
+          "legendFormat": "Devices"
+        }
       ]
     }
   ]
