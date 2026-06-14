@@ -51,6 +51,16 @@ type Instance struct {
 	MaintenanceState   string `json:"maintenanceState,omitempty"`
 	// Device operational state.
 	DeviceState string `json:"deviceState,omitempty"`
+	// Device wear/temperature/error inputs (WS2-20).
+	TemperatureState  string `json:"temperatureState,omitempty"`
+	SsdEndOfLifeState string `json:"ssdEndOfLifeState,omitempty"`
+	ErrorState        string `json:"errorState,omitempty"`
+	// Sdt operational state (Gen2 NVMe/TCP target, WS2-09).
+	SdtState string `json:"sdtState,omitempty"`
+	// Inventory counts (WS2-13; System/ProtectionDomain instance properties).
+	NumOfVolumes int `json:"numOfVolumes,omitempty"`
+	NumOfDevices int `json:"numOfDevices,omitempty"`
+	NumOfSds     int `json:"numOfSds,omitempty"`
 	// Volume -> SDC mappings (which hosts the volume is exposed to).
 	MappedSdcInfo []MappedSdc `json:"mappedSdcInfo,omitempty"`
 }
