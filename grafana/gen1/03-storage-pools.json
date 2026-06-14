@@ -11,7 +11,7 @@
     "pflex_exporter"
   ],
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "time": {
     "from": "now-6h",
     "to": "now"
@@ -49,7 +49,7 @@
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "query": "label_values(pflex_storagepool_max_capacity_in_kb{cluster=~\"$cluster\"}, storage_pool_name)",
+        "query": "label_values(pflex_storagepool_max_capacity_in_kb, storage_pool_name)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
@@ -63,136 +63,173 @@
   "panels": [
     {
       "id": 1,
-      "title": "Pool Capacity Used %",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 0
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "100 * pflex_storagepool_capacity_in_use_in_kb{cluster=~\"$cluster\", storage_pool_name=~\"$pool\"} / pflex_storagepool_max_capacity_in_kb{cluster=~\"$cluster\", storage_pool_name=~\"$pool\"}",
-          "legendFormat": "{{cluster}}/{{storage_pool_name}}"
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "title": "Pool Spare Capacity",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 0
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "deckbytes"
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "pflex_storagepool_spare_capacity_in_kb{cluster=~\"$cluster\", storage_pool_name=~\"$pool\"}",
-          "legendFormat": "{{cluster}}/{{storage_pool_name}}"
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "title": "Pool IOPS (total)",
-      "type": "timeseries",
-      "description": "Pre-derived per-second gauge; aggregate with sum, never rate().",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "iops"
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (storage_pool_name, direction) (pflex_storagepool_iops{cluster=~\"$cluster\", storage_pool_name=~\"$pool\", op=\"total\"})",
-          "legendFormat": "{{storage_pool_name}} {{direction}}"
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "title": "Pool Bandwidth (KB/s, total)",
-      "type": "timeseries",
-      "description": "Pre-derived per-second gauge (KB/s); aggregate with sum, never rate().",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "KBs"
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (storage_pool_name, direction) (pflex_storagepool_bandwidth_kb_per_second{cluster=~\"$cluster\", storage_pool_name=~\"$pool\", op=\"total\"})",
-          "legendFormat": "{{storage_pool_name}} {{direction}}"
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "title": "Resilience & Rebuild (WS2)",
       "type": "row",
+      "title": "Performance",
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "IOPS",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "iops",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (storage_pool_name) (pflex_storagepool_iops{cluster=~\"$cluster\", op=\"total\"})",
+          "legendFormat": "{{storage_pool_name}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Bandwidth",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "KBs",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (storage_pool_name) (pflex_storagepool_bandwidth_kb_per_second{cluster=~\"$cluster\", op=\"total\"})",
+          "legendFormat": "{{storage_pool_name}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Latency",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg by (storage_pool_name) (pflex_storagepool_latency{cluster=~\"$cluster\", op=\"target\"})",
+          "legendFormat": "{{storage_pool_name}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "row",
+      "title": "Capacity & Resilience",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
       }
     },
     {
       "id": 6,
-      "title": "Rebuild/Rebalance Remaining (KiB) by pool",
       "type": "timeseries",
+      "title": "Capacity (Used / Max) (KiB)",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -201,14 +238,15 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 17
+        "y": 10
       },
       "fieldConfig": {
         "defaults": {
           "unit": "deckbytes",
           "custom": {
             "drawStyle": "line",
-            "fillOpacity": 10
+            "fillOpacity": 10,
+            "showPoints": "never"
           }
         },
         "overrides": []
@@ -223,31 +261,27 @@
           ]
         },
         "tooltip": {
-          "mode": "multi"
+          "mode": "multi",
+          "sort": "desc"
         }
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (storage_pool_name) (pflex_storagepool_bck_rebuild_capacity_in_kb{cluster=~\"$cluster\"})",
-          "legendFormat": "bck rebuild"
+          "expr": "sum by (storage_pool_name) (pflex_storagepool_capacity_in_use_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "used"
         },
         {
           "refId": "B",
-          "expr": "sum by (storage_pool_name) (pflex_storagepool_fwd_rebuild_capacity_in_kb{cluster=~\"$cluster\"})",
-          "legendFormat": "fwd rebuild"
-        },
-        {
-          "refId": "C",
-          "expr": "sum by (storage_pool_name) (pflex_storagepool_rebalance_capacity_in_kb{cluster=~\"$cluster\"})",
-          "legendFormat": "rebalance"
+          "expr": "sum by (storage_pool_name) (pflex_storagepool_max_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "max"
         }
       ]
     },
     {
       "id": 7,
-      "title": "Pool Capacity At Risk (KiB)",
       "type": "timeseries",
+      "title": "Capacity At Risk / Rebuild (KiB)",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -256,14 +290,15 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 17
+        "y": 10
       },
       "fieldConfig": {
         "defaults": {
           "unit": "deckbytes",
           "custom": {
             "drawStyle": "line",
-            "fillOpacity": 10
+            "fillOpacity": 10,
+            "showPoints": "never"
           }
         },
         "overrides": []
@@ -278,7 +313,8 @@
           ]
         },
         "tooltip": {
-          "mode": "multi"
+          "mode": "multi",
+          "sort": "desc"
         }
       },
       "targets": [
@@ -289,10 +325,16 @@
         },
         {
           "refId": "B",
-          "expr": "sum by (storage_pool_name) (pflex_storagepool_failed_capacity_in_kb{cluster=~\"$cluster\"})",
-          "legendFormat": "failed"
+          "expr": "sum by (storage_pool_name) (pflex_storagepool_bck_rebuild_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "bck rebuild"
+        },
+        {
+          "refId": "C",
+          "expr": "sum by (storage_pool_name) (pflex_storagepool_rebalance_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "rebalance"
         }
       ]
     }
-  ]
+  ],
+  "description": "Storage pool capacity, resilience, and performance."
 }

@@ -8,10 +8,30 @@ Importable Grafana dashboards (PromQL) live in `grafana/`, split by generation:
   storage node, volumes, cluster capacity.
 
 Use the **gen1** dashboards for mirroring clusters and the **gen2** dashboards for
-erasure-coding clusters — the gen2 dashboards filter on
-`pflex_cluster_generation{generation="gen2"}` and use the unit-explicit Gen2 metric names
+erasure-coding clusters — the gen2 dashboards use the unit-explicit Gen2 metric names
 (bytes/s, bytes, µs). They are JSON-validated; validate against your Grafana before
 relying on them.
+
+## Layout & panel types
+
+Every dashboard follows the same rubric, organized into collapsible rows:
+**Health → Performance → Capacity/Resilience → Inventory** (each dashboard includes the
+rows relevant to its object). Panel-type palette:
+
+- **timeseries** — rates, capacity-over-time, latency, IOPS/bandwidth.
+- **stat** — headline KPIs (threshold-colored, with a sparkline).
+- **gauge** — bounded percentages only (e.g. Capacity Used %).
+- **state-timeline** — `pflex_*_health` over time as green/yellow/red bands
+  (0=Healthy, 1=Degraded, 2=Failed), so you can see *when* a component degraded.
+- **table** — label-rich `*_info` data (e.g. device state + temperature/SSD-EOL/error).
+
+## Regenerating
+
+The dashboards are generated from a single script so a panel-type change propagates to all
+16 at once: `python3 scripts/dashboards/generate.py` (run from the repo root). It rewrites
+each dashboard's `panels` while preserving its `uid`, `title`, and template variables, and
+fails on any gridPos overlap. Edit the builders/specs in that script rather than hand-editing
+the JSON.
 
 ## Import
 
