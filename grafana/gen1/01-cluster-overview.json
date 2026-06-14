@@ -12,7 +12,7 @@
   ],
   "timezone": "",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "time": {
     "from": "now-6h",
     "to": "now"
@@ -48,180 +48,265 @@
   "panels": [
     {
       "id": 1,
-      "title": "Clusters Up",
+      "type": "row",
+      "title": "Health & Status",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
       "type": "stat",
+      "title": "Clusters Up",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
+        "w": 4,
         "x": 0,
-        "y": 0
+        "y": 1
       },
       "fieldConfig": {
         "defaults": {
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "DOWN",
-                  "color": "red"
-                },
-                "1": {
-                  "text": "UP",
-                  "color": "green"
-                }
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
               }
-            }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
           ]
         },
-        "overrides": []
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "pflex_up{cluster=~\"$cluster\"}",
-          "legendFormat": "{{cluster}}"
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "title": "Capacity Used %",
-      "type": "gauge",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 6,
-        "y": 0
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "100 * sum by (cluster) (pflex_cluster_capacity_in_use_in_kb{cluster=~\"$cluster\"}) / sum by (cluster) (pflex_cluster_max_capacity_in_kb{cluster=~\"$cluster\"})",
-          "legendFormat": "{{cluster}}"
+          "expr": "sum(pflex_up{cluster=~\"$cluster\"})",
+          "legendFormat": "Clusters Up"
         }
       ]
     },
     {
       "id": 3,
-      "title": "Capacity (Used / Max)",
-      "type": "timeseries",
+      "type": "gauge",
+      "title": "Capacity Used %",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 0
+        "h": 4,
+        "w": 5,
+        "x": 4,
+        "y": 1
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "deckbytes"
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
         },
         "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (cluster) (pflex_cluster_capacity_in_use_in_kb{cluster=~\"$cluster\"})",
-          "legendFormat": "{{cluster}} used"
-        },
-        {
-          "refId": "B",
-          "expr": "sum by (cluster) (pflex_cluster_max_capacity_in_kb{cluster=~\"$cluster\"})",
-          "legendFormat": "{{cluster}} max"
+          "expr": "100 * sum by (cluster) (pflex_cluster_capacity_in_use_in_kb{cluster=~\"$cluster\"}) / clamp_min(sum by (cluster) (pflex_cluster_max_capacity_in_kb{cluster=~\"$cluster\"}), 1)",
+          "legendFormat": "Capacity Used %"
         }
       ]
     },
     {
       "id": 4,
-      "title": "Total IOPS (read + write)",
-      "type": "timeseries",
-      "description": "iops is a pre-derived per-second gauge from the PowerFlex API; aggregate with sum, never rate().",
+      "type": "stat",
+      "title": "Capacity At Risk %",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 8
+        "h": 4,
+        "w": 5,
+        "x": 9,
+        "y": 1
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "iops"
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
         },
         "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (cluster, direction) (pflex_cluster_iops{cluster=~\"$cluster\", op=\"total\"})",
-          "legendFormat": "{{cluster}} {{direction}}"
+          "expr": "100 * sum by (cluster) (pflex_cluster_degraded_failed_capacity_in_kb{cluster=~\"$cluster\"}) / clamp_min(sum by (cluster) (pflex_cluster_max_capacity_in_kb{cluster=~\"$cluster\"}), 1)",
+          "legendFormat": "Capacity At Risk %"
         }
       ]
     },
     {
       "id": 5,
-      "title": "Total Bandwidth (KB/s)",
-      "type": "timeseries",
-      "description": "bandwidth is a pre-derived per-second gauge (KB/s); aggregate with sum, never rate().",
+      "type": "stat",
+      "title": "Worst Component Health",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
+        "h": 4,
+        "w": 5,
+        "x": 14,
+        "y": 1
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "KBs"
+          "unit": "short",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Healthy",
+                  "color": "green"
+                },
+                "1": {
+                  "text": "Degraded",
+                  "color": "yellow"
+                },
+                "2": {
+                  "text": "Failed",
+                  "color": "red"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          }
         },
         "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (cluster, direction) (pflex_cluster_bandwidth_kb_per_second{cluster=~\"$cluster\", op=\"total\"})",
-          "legendFormat": "{{cluster}} {{direction}}"
+          "expr": "max(pflex_sds_health{cluster=~\"$cluster\"} or pflex_device_health{cluster=~\"$cluster\"} or pflex_sdc_health{cluster=~\"$cluster\"})",
+          "legendFormat": "Worst Component Health"
         }
       ]
     },
     {
       "id": 6,
-      "title": "User IO Latency",
-      "type": "timeseries",
+      "type": "stat",
+      "title": "Compression Ratio",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 16
+        "h": 4,
+        "w": 5,
+        "x": 19,
+        "y": 1
       },
       "fieldConfig": {
         "defaults": {
@@ -229,18 +314,92 @@
         },
         "overrides": []
       },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
       "targets": [
         {
           "refId": "A",
-          "expr": "avg by (cluster, direction) (pflex_cluster_latency{cluster=~\"$cluster\", op=\"userDataSdc\"})",
-          "legendFormat": "{{cluster}} {{direction}}"
+          "expr": "max by (cluster) (pflex_cluster_compression_ratio{cluster=~\"$cluster\"})",
+          "legendFormat": "Compression Ratio"
         }
       ]
     },
     {
       "id": 7,
-      "title": "Rebuild / Rebalance IOPS",
+      "type": "row",
+      "title": "Capacity & Resilience",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      }
+    },
+    {
+      "id": 8,
       "type": "timeseries",
+      "title": "Capacity (Used / Max)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "deckbytes",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cluster) (pflex_cluster_capacity_in_use_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "used"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (cluster) (pflex_cluster_max_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "max"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Capacity At Risk (KiB)",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -249,67 +408,386 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 6
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "iops"
+          "unit": "deckbytes",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
         },
         "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (cluster, op) (pflex_cluster_iops{cluster=~\"$cluster\", op=~\"fwdRebuild|bckRebuild|normRebuild|rebalance\"})",
-          "legendFormat": "{{cluster}} {{op}}"
+          "expr": "sum by (cluster) (pflex_cluster_degraded_failed_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "degraded+failed"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (cluster) (pflex_cluster_failed_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "failed"
+        },
+        {
+          "refId": "C",
+          "expr": "sum by (cluster) (pflex_cluster_degraded_healthy_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "degraded(healthy)"
+        },
+        {
+          "refId": "D",
+          "expr": "sum by (cluster) (pflex_cluster_spare_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "spare"
         }
       ]
     },
     {
-      "id": 8,
-      "title": "Compression Ratio",
-      "type": "stat",
+      "id": 10,
+      "type": "timeseries",
+      "title": "Rebuild / Rebalance Remaining (KiB)",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
       },
       "gridPos": {
-        "h": 4,
-        "w": 6,
+        "h": 8,
+        "w": 12,
         "x": 0,
-        "y": 4
+        "y": 14
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
-          "decimals": 2
+          "unit": "deckbytes",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
         },
         "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "max by (cluster) (pflex_cluster_compression_ratio{cluster=~\"$cluster\"})",
-          "legendFormat": "{{cluster}}"
+          "expr": "sum by (cluster) (pflex_cluster_bck_rebuild_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "bck rebuild"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (cluster) (pflex_cluster_fwd_rebuild_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "fwd rebuild"
+        },
+        {
+          "refId": "C",
+          "expr": "sum by (cluster) (pflex_cluster_rebalance_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "rebalance"
         }
       ]
     },
     {
-      "id": 9,
-      "title": "Inventory (WS2)",
+      "id": 11,
+      "type": "timeseries",
+      "title": "Snapshot Capacity (KiB)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "deckbytes",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cluster) (pflex_cluster_snapshot_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "snapshot"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (cluster) (pflex_cluster_net_snapshot_capacity_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "net snapshot"
+        },
+        {
+          "refId": "C",
+          "expr": "sum by (cluster) (pflex_cluster_snap_capacity_in_use_in_kb{cluster=~\"$cluster\"})",
+          "legendFormat": "in use"
+        }
+      ]
+    },
+    {
+      "id": 12,
       "type": "row",
+      "title": "Performance",
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 23
       }
     },
     {
-      "id": 10,
-      "title": "Volumes",
+      "id": 13,
+      "type": "timeseries",
+      "title": "Total IOPS (read + write)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 24
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "iops",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cluster, direction) (pflex_cluster_iops{cluster=~\"$cluster\", op=\"total\"})",
+          "legendFormat": "{{direction}}"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Total Bandwidth (KB/s)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 24
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "KBs",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cluster, direction) (pflex_cluster_bandwidth_kb_per_second{cluster=~\"$cluster\", op=\"total\"})",
+          "legendFormat": "{{direction}}"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "User IO Latency",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 24
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg by (cluster, direction) (pflex_cluster_latency{cluster=~\"$cluster\", op=\"userDataSdc\"})",
+          "legendFormat": "{{direction}}"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "type": "timeseries",
+      "title": "Rebuild / Rebalance IOPS",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "iops",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cluster, op) (pflex_cluster_iops{cluster=~\"$cluster\", op=~\"fwdRebuild|bckRebuild|normRebuild|rebalance\"})",
+          "legendFormat": "{{op}}"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "type": "row",
+      "title": "Inventory",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 41
+      }
+    },
+    {
+      "id": 18,
       "type": "stat",
+      "title": "Volumes",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -318,7 +796,7 @@
         "h": 4,
         "w": 8,
         "x": 0,
-        "y": 25
+        "y": 42
       },
       "fieldConfig": {
         "defaults": {
@@ -332,7 +810,9 @@
             "lastNotNull"
           ]
         },
-        "colorMode": "value"
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
       },
       "targets": [
         {
@@ -343,9 +823,9 @@
       ]
     },
     {
-      "id": 11,
-      "title": "SDS",
+      "id": 19,
       "type": "stat",
+      "title": "SDS",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -354,7 +834,7 @@
         "h": 4,
         "w": 8,
         "x": 8,
-        "y": 25
+        "y": 42
       },
       "fieldConfig": {
         "defaults": {
@@ -368,7 +848,9 @@
             "lastNotNull"
           ]
         },
-        "colorMode": "value"
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
       },
       "targets": [
         {
@@ -379,9 +861,9 @@
       ]
     },
     {
-      "id": 12,
-      "title": "Devices",
+      "id": 20,
       "type": "stat",
+      "title": "Devices",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -390,7 +872,7 @@
         "h": 4,
         "w": 8,
         "x": 16,
-        "y": 25
+        "y": 42
       },
       "fieldConfig": {
         "defaults": {
@@ -404,7 +886,9 @@
             "lastNotNull"
           ]
         },
-        "colorMode": "value"
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
       },
       "targets": [
         {
@@ -414,5 +898,6 @@
         }
       ]
     }
-  ]
+  ],
+  "description": "Cluster health, capacity & resilience, performance, and inventory at a glance. Detail lives in the per-object dashboards."
 }
