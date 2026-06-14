@@ -2,7 +2,10 @@
   "System": {
     "id": "clu1",
     "name": "cluster-one",
-    "links": []
+    "links": [],
+    "numOfVolumes": 2,
+    "numOfSds": 3,
+    "numOfDevices": 6
   },
   "protectionDomainList": [
     {

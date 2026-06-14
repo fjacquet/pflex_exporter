@@ -249,3 +249,13 @@ func otlpAttrsMatch(dp metricdata.DataPoint[float64], match map[string]string) b
 	}
 	return true
 }
+
+// TestInventoryCountMetrics asserts cluster inventory counts emit from System properties (WS2-13).
+func TestInventoryCountMetrics(t *testing.T) {
+	c, store := newTestCollector(t)
+	c.CollectOnce(context.Background())
+	snap := store.Load()
+	assertSample(t, snap, "pflex_cluster_num_of_volumes", map[string]string{"cluster": "test-cluster"}, 2)
+	assertSample(t, snap, "pflex_cluster_num_of_sds", map[string]string{"cluster": "test-cluster"}, 3)
+	assertSample(t, snap, "pflex_cluster_num_of_devices", map[string]string{"cluster": "test-cluster"}, 6)
+}
