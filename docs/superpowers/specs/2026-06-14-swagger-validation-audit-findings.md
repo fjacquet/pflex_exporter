@@ -92,3 +92,104 @@ not surfaced as panels.
   source but not populated by the test fixtures); **0 coverage gaps**;
   **27 uncovered** (emitted, no panel). 1 extraction false positive
   (`pflex_exporter`).
+
+## WS1 — Correctness audit
+
+Scope: endpoints, request payloads, query params, and response field names the
+exporter USES, cross-checked against the in-scope Dell PowerFlex swagger specs
+(`11227-*` auth, `11231-4.5.5` Gen1 Block API, `11231-5.0.0` Gen2 Block Storage
+API). Trust hierarchy applied: **passing tests + CLAUDE.md + live-cluster docs >
+spec**. NO code changed in this task.
+
+### Endpoint contracts
+
+| ID | Endpoint | Aspect | Code (file:line) | Spec | Verdict | Recommendation |
+|----|----------|--------|------------------|------|---------|----------------|
+| WS1-01 | POST /rest/auth/login | path + method | client.go:37, auth.go:74-78 | present (11227-4.5.5 & 5.0.0) | MATCH | none |
+| WS1-02 | POST /rest/auth/login | request body `username`/`password` | auth.go:77 | schema `login-credentials` example `{username,password}` | MATCH | none |
+| WS1-03 | POST /rest/auth/login | response `access_token`/`refresh_token` read | auth.go:21-22,86-98 | 200 fields include `access_token`, `refresh_token` | MATCH | none |
+| WS1-04 | POST /rest/auth/update-token | path + method | client.go:38, auth.go:104-109 | present (both 11227) | MATCH | none |
+| WS1-05 | POST /rest/auth/update-token | request body `refresh_token` | auth.go:108 | schema `update-token-request` example `{refresh_token}` | MATCH | none |
+| WS1-06 | POST /rest/auth/update-token | response `access_token`/`refresh_token` read | auth.go:118-132 | 200 fields include both | MATCH | none |
+| WS1-07 | GET /api/instances (aggregate, all types) | path + method | client.go:31,149-154 | NOT in in-scope spec (spec only has per-type `GET /api/instances/{Type}::{id}` and `GET /api/types/{Type}/instances`) | MISMATCH(reality-wins) | none — endpoint is a real PowerFlex aggregate route; exercised by mock gateway + live `--once`. Spec omission, not a code bug. |
+| WS1-08 | POST /api/instances/querySelectedStatistics (multi-type batch) | path + method | client.go:32,158-163 | NOT in in-scope spec (spec only has per-type `POST /api/types/{Type}/instances/action/querySelectedStatistics`) | MISMATCH(reality-wins) | none — the aggregate multi-type batch route is real PowerFlex; embedded `querySelectedStatistics.json` `selectedStatisticsList[]{type,allIds,properties[]}` is the documented batch form. Tests + live `--once` confirm. |
+| WS1-09 | Gen1 request body shape (`selectedStatisticsList`) | request payload | querySelectedStatistics.json | per-type spec ops have empty/abstract requestBody (`{}`) | MISMATCH(reality-wins) | none — spec does not document the batch body; the `selectedStatisticsList` form is the live contract (passing `TestGen1*`). |
+| WS1-10 | POST /dtapi/rest/v1/metrics/query | path + method | client.go:33,175-247 | present (11231-5.0.0) | MATCH | none |
+| WS1-11 | dtapi `resource_type` one-per-call | request payload | client.go:194-206 (per-type fan-out) | requestBody `required:[resource_type]`, single string | MATCH | none |
+| WS1-12 | dtapi `metrics` field form | request payload | client.go:206 (JSON array) | requestBody `metrics: {type: string}` (comma-separated) | **MISMATCH(reality-wins)** | **NEVER change.** See WS1-13 below. |
+| WS1-13 | GET /api/instances (Gen2) | path + method | client.go:31,149-154 | same omission as WS1-07 (Gen2 spec only per-type) | MISMATCH(reality-wins) | none — aggregate route real on Gen2 too; mock + live confirm. |
+
+### Notable
+
+- **WS1-12 / dtapi `metrics` field: spec = comma-separated STRING, reality =
+  JSON ARRAY → MISMATCH(reality-wins). DO NOT change.** Raw spec
+  (`docs/swagger/11231-5.0.0.json` → `/dtapi/rest/v1/metrics/query` requestBody)
+  declares `"metrics": {"type": "string", "description": "A list of specific
+  metrics to retrieve, separated by commas."}`. The live dtapi returns an
+  instant **HTTP 500** for a string and accepts only a JSON array — matching
+  Dell's reference `siocli`/`sio_sdk`. Code correctly sends an array
+  (`client.go:206`). Sending the spec's string reintroduces the **v0.6.2 HTTP
+  500 regression**. Cited in `CLAUDE.md:32` ("The request's `metrics` field is a
+  **JSON array** … a comma-separated string returns an instant HTTP 500 … the
+  PowerFlex 5.0 PDF documents a string, but it is wrong — trusting it shipped a
+  regression in v0.6.2") and reinforced at `CLAUDE.md:46` (no-5xx-retry
+  rationale). Guarded by `client_test.go:385` (asserts array form). **Recommend
+  NEVER changing.**
+
+- **dtapi response envelope (`resources[]{id,metrics[]{name,values[]}}`) is not
+  in the in-scope spec** → MISMATCH(reality-wins). The spec's `MetricsQuery`
+  200 schema is an abstract `oneOf` of per-type `*-metrics` objects keyed by
+  flat metric names; it does NOT define the `resources` array envelope the code
+  unmarshals (`statistics_v5.go:28-40`). The test fixture
+  (`testdata/statistics-v5.json`, served via `client_test.go:150` as
+  `{"resources": <per-type array>}`) and live `--trace` confirm the real shape.
+  No code change.
+
+- The dtapi 200 field list extracted from the spec contains obvious typos
+  (`avg_host_to_write_latency`, `idevice_local_read_bandwidthd`,
+  `idevice_remote_write_bandwidthd`, `thin_provisioning_ration`,
+  `Logical_owned`, `raw_rebalance`). These are spec-side noise; the code's
+  `v5Metrics` table uses the correct names. Not actionable.
+
+### Struct field cross-check
+
+Fields OUR CODE reads (focused on identity / state / stat-counter fields it
+actually unmarshals), checked against the in-scope spec:
+
+**Confirmed by spec (MATCH):**
+- Identity/relations: `id`, `name`, `links`, `href`, `rel` — all present in
+  Gen1 spec (`11231-4.5.5`). (`instances.go:26-27,42`)
+- Gen1 stat counters: `primaryReadBwc` (Bwc family), `numSeconds`,
+  `totalWeightInKb`, and the API's misspelled **`numOccured`** (single 'r') —
+  all present in Gen1 spec. Code reads both `numOccured` and `numOccurred`
+  defensively (`statistics.go:14-15`); the spec confirms the single-'r' form is
+  the real one. MATCH.
+- Gen2 state/identity: `id`, `name`, `dataLayout`, `mdmConnectionState`,
+  `maintenanceState`, `deviceState`, `membershipState`, `mediaType`,
+  `volumeType`, `sdcId`, `sdcIp` — all present in Gen2 spec (`11231-5.0.0`).
+- Auth: `access_token`, `refresh_token` — present in both 11227 specs.
+
+**Read by code, NOT in in-scope spec (trust-rule applied):**
+- `mappedSdcInfo` (Volume mapping → `pflex_volume_mapped_sdc`) — absent from
+  both 11231 specs. Present in live test fixtures
+  (`testdata/instances.json`, `instances-gen2.json`, `instances-unhealthy.json`)
+  and exercised by passing tests → **MISMATCH(reality-wins)**, not a bug.
+- `deviceCurrentPathName` (Device label) — absent from both 11231 specs; present
+  in the same three fixtures + passing tests → **MISMATCH(reality-wins)**, not a
+  bug.
+- Gen2 `links`/`href`/`rel` for the relations graph — the aggregate Gen2
+  `/api/instances` response (with link hrefs) is the WS1-07/WS1-13 undocumented
+  route, so these too fall under reality-wins via that endpoint.
+
+**No BUG-classified findings in WS1.** Every code/spec discrepancy is backed by
+passing tests, fixtures, or CLAUDE.md → all MISMATCH(reality-wins). Nothing feeds
+Task 10 from this work-stream.
+
+### Verdict counts (WS1)
+
+- MATCH: WS1-01..06, WS1-10, WS1-11 + struct fields (id/name/links/href/rel,
+  Bwc/numSeconds/totalWeightInKb/numOccured, Gen2 state fields, auth tokens).
+- MISMATCH(reality-wins): WS1-07, WS1-08, WS1-09, WS1-12, WS1-13 + dtapi
+  response envelope + `mappedSdcInfo` + `deviceCurrentPathName` (8 distinct
+  discrepancies, all spec-side, recommend no code change).
+- BUG: 0.
