@@ -4,15 +4,89 @@
     "capacityInUseInKb": 400000,
     "unusedCapacityInKb": 600000,
     "compressionRatio": 1.5,
-    "primaryReadBwc": { "numOccured": 100, "numSeconds": 10, "totalWeightInKb": 2000 },
-    "primaryWriteBwc": { "numOccured": 50, "numSeconds": 10, "totalWeightInKb": 1000 },
-    "userDataSdcReadLatency": { "numOccured": 100, "numSeconds": 10, "totalWeightInKb": 300 }
+    "primaryReadBwc": {
+      "numOccured": 100,
+      "numSeconds": 10,
+      "totalWeightInKb": 2000
+    },
+    "primaryWriteBwc": {
+      "numOccured": 50,
+      "numSeconds": 10,
+      "totalWeightInKb": 1000
+    },
+    "userDataSdcReadLatency": {
+      "numOccured": 100,
+      "numSeconds": 10,
+      "totalWeightInKb": 300
+    },
+    "degradedHealthyCapacityInKb": 1024,
+    "fwdRebuildCapacityInKb": 2048,
+    "bckRebuildCapacityInKb": 512,
+    "normRebuildCapacityInKb": 0,
+    "rebalanceCapacityInKb": 256,
+    "snapCapacityInUseInKb": 4096,
+    "pendingMovingInBckRebuildJobs": 2,
+    "activeMovingInBckRebuildJobs": 1,
+    "pendingMovingOutBckRebuildJobs": 0,
+    "activeMovingOutBckRebuildJobs": 0,
+    "pendingMovingInRebalanceJobs": 3,
+    "activeMovingInRebalanceJobs": 1,
+    "pendingMovingInFwdRebuildJobs": 0,
+    "activeMovingInFwdRebuildJobs": 0,
+    "journalerReadLatency": {
+      "numOccured": 5,
+      "numSeconds": 1,
+      "totalWeightInKb": 250
+    },
+    "journalerWriteLatency": {
+      "numOccured": 5,
+      "numSeconds": 1,
+      "totalWeightInKb": 250
+    }
   },
   "ProtectionDomain": {
     "pd1": {
       "maxCapacityInKb": 1000000,
       "capacityInUseInKb": 400000,
-      "primaryReadBwc": { "numOccured": 100, "numSeconds": 10, "totalWeightInKb": 2000 }
+      "primaryReadBwc": {
+        "numOccured": 100,
+        "numSeconds": 10,
+        "totalWeightInKb": 2000
+      },
+      "degradedHealthyCapacityInKb": 256,
+      "fwdRebuildCapacityInKb": 512,
+      "bckRebuildCapacityInKb": 128,
+      "normRebuildCapacityInKb": 0,
+      "rebalanceCapacityInKb": 64,
+      "snapCapacityInUseInKb": 1024,
+      "pendingMovingInBckRebuildJobs": 1,
+      "activeMovingInBckRebuildJobs": 1,
+      "pendingMovingOutBckRebuildJobs": 0,
+      "activeMovingOutBckRebuildJobs": 0,
+      "pendingMovingInRebalanceJobs": 0,
+      "activeMovingInRebalanceJobs": 0,
+      "pendingMovingInFwdRebuildJobs": 0,
+      "activeMovingInFwdRebuildJobs": 0,
+      "targetReadLatency": {
+        "numOccured": 5,
+        "numSeconds": 1,
+        "totalWeightInKb": 250
+      },
+      "targetWriteLatency": {
+        "numOccured": 5,
+        "numSeconds": 1,
+        "totalWeightInKb": 250
+      },
+      "journalerReadLatency": {
+        "numOccured": 5,
+        "numSeconds": 1,
+        "totalWeightInKb": 250
+      },
+      "journalerWriteLatency": {
+        "numOccured": 5,
+        "numSeconds": 1,
+        "totalWeightInKb": 250
+      }
     }
   },
   "StoragePool": {
@@ -20,33 +94,89 @@
       "maxCapacityInKb": 1000000,
       "capacityInUseInKb": 400000,
       "spareCapacityInKb": 100000,
-      "primaryReadBwc": { "numOccured": 100, "numSeconds": 10, "totalWeightInKb": 2000 }
+      "primaryReadBwc": {
+        "numOccured": 100,
+        "numSeconds": 10,
+        "totalWeightInKb": 2000
+      },
+      "degradedHealthyCapacityInKb": 512,
+      "fwdRebuildCapacityInKb": 1024,
+      "bckRebuildCapacityInKb": 256,
+      "normRebuildCapacityInKb": 0,
+      "rebalanceCapacityInKb": 128,
+      "snapCapacityInUseInKb": 2048,
+      "pendingMovingInBckRebuildJobs": 1,
+      "activeMovingInBckRebuildJobs": 0,
+      "pendingMovingOutBckRebuildJobs": 0,
+      "activeMovingOutBckRebuildJobs": 0,
+      "pendingMovingInRebalanceJobs": 1,
+      "activeMovingInRebalanceJobs": 0,
+      "pendingMovingInFwdRebuildJobs": 0,
+      "activeMovingInFwdRebuildJobs": 0,
+      "targetReadLatency": {
+        "numOccured": 5,
+        "numSeconds": 1,
+        "totalWeightInKb": 250
+      },
+      "targetWriteLatency": {
+        "numOccured": 5,
+        "numSeconds": 1,
+        "totalWeightInKb": 250
+      }
     }
   },
   "Sds": {
     "sds1": {
-      "primaryReadBwc": { "numOccured": 80, "numSeconds": 10, "totalWeightInKb": 1600 },
-      "totalWriteBwc": { "numOccured": 40, "numSeconds": 10, "totalWeightInKb": 800 }
+      "primaryReadBwc": {
+        "numOccured": 80,
+        "numSeconds": 10,
+        "totalWeightInKb": 1600
+      },
+      "totalWriteBwc": {
+        "numOccured": 40,
+        "numSeconds": 10,
+        "totalWeightInKb": 800
+      }
     }
   },
   "Device": {
     "dev1": {
       "avgReadSizeInBytes": 4096,
       "avgReadLatencyInMicrosec": 250,
-      "primaryReadBwc": { "numOccured": 80, "numSeconds": 10, "totalWeightInKb": 1600 }
+      "primaryReadBwc": {
+        "numOccured": 80,
+        "numSeconds": 10,
+        "totalWeightInKb": 1600
+      }
     }
   },
   "Volume": {
     "vol1": {
-      "userDataReadBwc": { "numOccured": 60, "numSeconds": 10, "totalWeightInKb": 1200 },
-      "userDataWriteBwc": { "numOccured": 30, "numSeconds": 10, "totalWeightInKb": 600 },
-      "userDataSdcReadLatency": { "numOccured": 60, "numSeconds": 10, "totalWeightInKb": 180 }
+      "userDataReadBwc": {
+        "numOccured": 60,
+        "numSeconds": 10,
+        "totalWeightInKb": 1200
+      },
+      "userDataWriteBwc": {
+        "numOccured": 30,
+        "numSeconds": 10,
+        "totalWeightInKb": 600
+      },
+      "userDataSdcReadLatency": {
+        "numOccured": 60,
+        "numSeconds": 10,
+        "totalWeightInKb": 180
+      }
     }
   },
   "Sdc": {
     "sdc1": {
       "numOfMappedVolumes": 3,
-      "userDataReadBwc": { "numOccured": 60, "numSeconds": 10, "totalWeightInKb": 1200 }
+      "userDataReadBwc": {
+        "numOccured": 60,
+        "numSeconds": 10,
+        "totalWeightInKb": 1200
+      }
     }
   }
 }

@@ -46,7 +46,23 @@
         "normRebuildReadBwc",
         "normRebuildWriteBwc",
         "volMigrationReadBwc",
-        "volMigrationWriteBwc"
+        "volMigrationWriteBwc",
+        "degradedHealthyCapacityInKb",
+        "fwdRebuildCapacityInKb",
+        "bckRebuildCapacityInKb",
+        "normRebuildCapacityInKb",
+        "rebalanceCapacityInKb",
+        "snapCapacityInUseInKb",
+        "pendingMovingInBckRebuildJobs",
+        "activeMovingInBckRebuildJobs",
+        "pendingMovingOutBckRebuildJobs",
+        "activeMovingOutBckRebuildJobs",
+        "pendingMovingInRebalanceJobs",
+        "activeMovingInRebalanceJobs",
+        "pendingMovingInFwdRebuildJobs",
+        "activeMovingInFwdRebuildJobs",
+        "journalerReadLatency",
+        "journalerWriteLatency"
       ]
     },
     {
@@ -119,7 +135,23 @@
         "netFglSparesInKb",
         "netMetadataOverheadInKb",
         "netCapacityInUseNoOverheadInKb",
-        "netUserDataCapacityInKb"
+        "netUserDataCapacityInKb",
+        "degradedHealthyCapacityInKb",
+        "fwdRebuildCapacityInKb",
+        "bckRebuildCapacityInKb",
+        "normRebuildCapacityInKb",
+        "rebalanceCapacityInKb",
+        "snapCapacityInUseInKb",
+        "pendingMovingInBckRebuildJobs",
+        "activeMovingInBckRebuildJobs",
+        "pendingMovingOutBckRebuildJobs",
+        "activeMovingOutBckRebuildJobs",
+        "pendingMovingInRebalanceJobs",
+        "activeMovingInRebalanceJobs",
+        "pendingMovingInFwdRebuildJobs",
+        "activeMovingInFwdRebuildJobs",
+        "targetReadLatency",
+        "targetWriteLatency"
       ]
     },
     {
@@ -160,7 +192,25 @@
         "rebalanceReadBwc",
         "rebalanceWriteBwc",
         "volMigrationReadBwc",
-        "volMigrationWriteBwc"
+        "volMigrationWriteBwc",
+        "degradedHealthyCapacityInKb",
+        "fwdRebuildCapacityInKb",
+        "bckRebuildCapacityInKb",
+        "normRebuildCapacityInKb",
+        "rebalanceCapacityInKb",
+        "snapCapacityInUseInKb",
+        "pendingMovingInBckRebuildJobs",
+        "activeMovingInBckRebuildJobs",
+        "pendingMovingOutBckRebuildJobs",
+        "activeMovingOutBckRebuildJobs",
+        "pendingMovingInRebalanceJobs",
+        "activeMovingInRebalanceJobs",
+        "pendingMovingInFwdRebuildJobs",
+        "activeMovingInFwdRebuildJobs",
+        "targetReadLatency",
+        "targetWriteLatency",
+        "journalerReadLatency",
+        "journalerWriteLatency"
       ]
     }
   ]
