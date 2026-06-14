@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,6 +17,9 @@ import (
 // sorted set of concrete metric family names for each generation. This is an audit
 // helper: the printed set is the ground-truth list of names the exporter emits.
 func TestDumpEmittedMetricNames(t *testing.T) {
+	if os.Getenv("PFLEX_DUMP_METRICS") == "" {
+		t.Skip("audit-only: set PFLEX_DUMP_METRICS=1 to dump the emitted metric-name set")
+	}
 	dump := func(gen, instancesFixture string) {
 		g := newMockGateway(t)
 		g.instancesFixture = instancesFixture
@@ -38,9 +42,14 @@ func TestDumpEmittedMetricNames(t *testing.T) {
 
 		// Print to stdout at column 0 so the audit grep (^(===|pflex_)) matches;
 		// t.Logf would prefix file:line and break the matcher.
-		fmt.Fprintf(os.Stdout, "=== EMITTED %s (%d) ===\n", gen, len(names))
+		var b strings.Builder
+		fmt.Fprintf(&b, "=== EMITTED %s (%d) ===\n", gen, len(names))
 		for _, n := range names {
-			fmt.Fprintln(os.Stdout, n)
+			b.WriteString(n)
+			b.WriteByte('\n')
+		}
+		if _, err := os.Stdout.WriteString(b.String()); err != nil {
+			t.Fatalf("%s write: %v", gen, err)
 		}
 	}
 

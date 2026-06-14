@@ -19,6 +19,12 @@ In Grafana: **Dashboards → New → Import**, upload the JSON, and select your 
 data source. Dashboards include a `cluster` template variable (and pool dashboards a
 `pool` variable) populated via `label_values(...)`.
 
+These dashboards were audit-validated (0 dead panels — every panel query references a
+metric the exporter actually emits). The authoritative concrete metric-name set is
+generated from the collector via the dump test
+(`PFLEX_DUMP_METRICS=1 go test ./internal/powerflex/ -run TestDumpEmittedMetricNames`),
+not from `docs/metrics.md`, which documents metric families rather than every concrete name.
+
 ## PromQL conventions
 
 - Metrics are gauges; identity/parent labels let you filter per object.
