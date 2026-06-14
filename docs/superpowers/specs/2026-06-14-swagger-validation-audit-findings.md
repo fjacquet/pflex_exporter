@@ -193,3 +193,64 @@ Task 10 from this work-stream.
   response envelope + `mappedSdcInfo` + `deviceCurrentPathName` (8 distinct
   discrepancies, all spec-side, recommend no code change).
 - BUG: 0.
+
+## WS2 — Coverage gaps (reported, not implemented)
+
+Scope: monitoring-relevant Block Storage object/instance types and their statistics
+surface in the two in-scope specs, diffed against current coverage
+(`metricPrefix`/`labelBuildersGen{1,2}` in `metrics.go`, `v5Metrics`/`v5ResourceType`
+in `statistics_v5.go`, `querySelectedStatistics.json`, and `state.go`). Config /
+installer / action / replication-policy management endpoints are out of scope.
+
+Currently collected types: System, Sds/StorageNode, Sdc, Volume, StoragePool, Device,
+ProtectionDomain (both gens); plus DeviceGroup, Sdt (Gen2 only). State/health is emitted
+for node (Sds/StorageNode), Device, Sdc only.
+
+### Uncollected object types
+
+| ID | Type | Gen | Priority | Why it matters / what stats |
+|----|------|-----|----------|------------------------------|
+| WS2-01 | Sdr (Storage Data Replicator) | Gen1 | MED | Data-path component for async replication. `/relationships/Statistics` exposes connectivity + replication throughput. Relevant only on replication-enabled clusters; no perf signal otherwise. |
+| WS2-02 | ReplicationConsistencyGroup (RCG) | Gen1 | MED | RPO compliance, journal capacity, apply/transmit latency & BWC (`rplApplyLatency`, `rplTransmitBwc`, `rplCgRpoCompliance`). HIGH for DR-protected estates, but replication-only. |
+| WS2-03 | ReplicationPair | Gen1 | MED | Per-pair initial-copy progress and replication state. Same caveat: replication-only. |
+| WS2-04 | FaultSet | Gen1 | LOW | Failure-domain grouping. Statistics relationship mirrors SDS aggregate (no unique signal); health is derivable from member SDS. Mostly inventory/config. |
+| WS2-05 | AccelerationPool | Gen1 | LOW | RFcache/NVDIMM acceleration tier. `accUsedCapacityInKb` + device acceleration state; niche, only on rfcache-configured pools. |
+| WS2-06 | VTree | Gen1+Gen2 | LOW | Volume-tree (snapshot lineage) container. Migration progress + address-space; high cardinality, little standalone operational signal vs Volume. |
+| WS2-07 | SnapshotPolicy | Gen1+Gen2 | LOW | Snapshot scheduling policy state (auto-snapshot success/failure counts). Cosmetic unless snapshot SLAs are tracked. |
+| WS2-08 | RemoteSystem / PeerMdm | Gen1 | LOW | Peer-cluster connectivity status for replication. Connectivity-state only; replication-only deployments. |
+| WS2-09 | Sdt (state/health only) | Gen2 | MED | Sdt **type** is collected for v5 stats, but it has no `pflex_sdt_health`/`_info`. `Sdt` instance exposes `sdtState`, `maintenanceState`, `mdmConnectionState`, `membershipState` — NVMe/TCP target health is a real data-path signal. (Gap is in `state.go` coverage, not the type table.) |
+| WS2-10 | Dgwt | Gen2 | LOW | Gen2-internal device-group write-cache table; not an operator-facing object. Skip. |
+
+### Uncollected statistics on collected types
+
+| ID | Type | Stat(s) | Gen | Priority | Notes |
+|----|------|---------|-----|----------|-------|
+| WS2-11 | ProtectionDomain / StoragePool | `degradedFailedCapacityInKb`, `failedCapacityInKb`, `degradedHealthyCapacityInKb` | Gen1 | HIGH | Degraded/failed capacity is a direct redundancy-risk signal. PD already requests `degradedFailedCapacityInKb`/`failedCapacityInKb`; StoragePool requests them too — verify they reach `docs/metrics.md`. The `degradedHealthy*` split is uncollected. |
+| WS2-12 | ProtectionDomain / StoragePool | rebuild/rebalance **capacity & job progress**: `*RebuildCapacityInKb`, `rebalanceCapacityInKb`, `pendingMoving*Jobs`, `activeMoving*Jobs` | Gen1 | HIGH | Rebuild/rebalance progress is the #1 "is my cluster recovering" signal. Gen1 collects rebuild/rebalance **BWC** (rate) but not remaining-capacity or job counts. Gen2 exposes `rebuild_rate`/`rebalance_rate` (collected) but not remaining capacity. |
+| WS2-13 | System / ProtectionDomain | `numOfSds`, `numOfVolumes`, `numOfSnapshots`, `numOfUnmappedVolumes`, `numOfThick/ThinBaseVolumes`, `numOfDevices` | Gen1 | MED | Inventory counts — cheap, useful for capacity-planning dashboards and detecting unmapped/orphaned volumes. Available on the always-fetched instance list / PD statistics. |
+| WS2-14 | ProtectionDomain | replication: `rplApplyLatency`, `rplTransmitBwc`, `rplReceiveBwc`, `rplUsedJournalCap`, `rplCgRpoCompliance`, `numRpoViolatingRplCgs{Src,Dest}` | Gen1 | MED | DR health (RPO violations, journal fill). HIGH for replicated estates but replication-only; MED in general backlog. |
+| WS2-15 | StoragePool / ProtectionDomain | snapshot capacity: `snapshotCapacityInKb`, `snapCapacityInUseInKb`, `netSnapshotCapacityInKb` | Gen1 | MED | Snapshot space consumption — common capacity-runaway cause. PD/SP request `netSnapshotCapacityInKb`; the raw `snapshotCapacityInKb`/`snapCapacityInUseInKb` are uncollected. |
+| WS2-16 | SDS / ProtectionDomain | rfcache hit/miss: `rfcacheReadHit`, `rfcacheReadMiss`, `rfcacheWriteHit`, `rfcacheWritePending`, `rfcacheIoErrors` | Gen1 | LOW | Read-flash-cache efficiency. Only meaningful on rfcache-enabled pools; large field set, low signal for most estates. |
+| WS2-17 | ProtectionDomain | latency split: `targetReadLatency`, `targetWriteLatency`, `targetOtherLatency`, `journalerReadLatency`, `journalerWriteLatency` | Gen1 | MED | Back-end (target/journaler) latency complements the host-side latency already collected; helps localize a latency problem to the device tier. |
+| WS2-18 | Volume | `compressionRatio`, `numOfMappedSdcs`, snapshot lineage (`vtreeId`, `ancestorVolumeId`) as labels/scalars | both | LOW | Per-volume efficiency/relationship enrichment. `numOfMappedSdcs` is partly covered by `pflex_volume_mapped_sdc` series; ratio is cosmetic at volume grain. |
+| WS2-19 | StorageNode (Gen2) | host-side IOPS/BW/latency (`host_*`) — Gen2 StorageNode only requests device/storage_fe series | Gen2 | MED | Gen1 Sds stats are sparse (only BWC), and Gen2 StorageNode omits the `host_*` op family that System/Sdc/Volume carry. Per-node host-facing load is a useful hotspot signal if the v5 API exposes it for `storage_node`. (Verify availability before adding.) |
+| WS2-20 | Device | `temperatureState`, `ssdEndOfLifeState`, `errorState` as health inputs | both | MED | Device wear/temperature/error state are early-warning hardware signals. Currently only `deviceState` feeds `pflex_device_health`; folding these in (state.go) raises failure-prediction value cheaply. |
+
+### Summary
+
+- **HIGH: 2** (WS2-11 degraded/failed capacity, WS2-12 rebuild/rebalance progress), **MED: 9** (WS2-01/02/03/09/13/14/15/17/19/20 — note WS2-20 counted here), **LOW: 8** (WS2-04/05/06/07/08/10/16/18). (Counts: HIGH 2, MED 10, LOW 8 across 20 rows.)
+- **Top 3 recommended additions:**
+  1. **WS2-12 — rebuild/rebalance remaining-capacity & job-progress (Gen1; Gen2 already has the rate)**: the single most-requested "is my cluster healthy / how long until protected" operational signal; today only the throughput rate is exported.
+  2. **WS2-11 — degraded/failed capacity on PD & StoragePool**: direct redundancy-at-risk gauge; trivially available (already in the Gen1 stat request for PD) and belongs on every health dashboard.
+  3. **WS2-09 — `pflex_sdt_health` / `_info` for Gen2 NVMe/TCP targets**: Sdt is already collected for performance but has no operational-state metric, leaving the Gen2 front-end data path with a health blind spot; a small `state.go` addition closes it.
+
+Ambiguities / verify-before-implementing:
+- WS2-19 (StorageNode `host_*`) and several Gen2 additions depend on what the dtapi
+  `/dtapi/rest/v1/metrics/query` actually exposes per `resource_type` — the 11231-5.0.0
+  spec documents the **instance** schema, not the dtapi metric catalogue, so the precise
+  available v5 metric names must be confirmed against a live cluster (`--once --trace`).
+- WS2-11/WS2-15: some of these fields are *already in* `querySelectedStatistics.json`
+  for PD/StoragePool; confirm against `docs/metrics.md` whether they are emitted before
+  filing them as net-new (they may be collected-but-undocumented rather than uncollected).
+- WS2-13 inventory counts come from instance properties, not the statistics API → would
+  flow through a `state.go`-style derivation, not the stat tables.
