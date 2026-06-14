@@ -52,6 +52,8 @@ services:
       # Bundled dashboards; gen1/ and gen2/ become Grafana folders.
       - ./grafana/gen1:/var/lib/grafana/dashboards/gen1:ro
       - ./grafana/gen2:/var/lib/grafana/dashboards/gen2:ro
+      # Companion dashboard (Grafana 1860) — requires a node_exporter scraped alongside.
+      - ./grafana/node-exporter-full.json:/var/lib/grafana/dashboards/node-exporter-full.json:ro
     depends_on:
       - prometheus
     restart: unless-stopped
