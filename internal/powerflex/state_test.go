@@ -54,7 +54,15 @@ func TestGen1StateSamples(t *testing.T) {
 	assertLabel(t, snap, "pflex_sds_info", map[string]string{"sds_id": "sds1"}, "membership_state", "Joined")
 	assertLabel(t, snap, "pflex_sds_info", map[string]string{"sds_id": "sds1"}, "maintenance_state", "NoMaintenance")
 	assertLabel(t, snap, "pflex_device_info", map[string]string{"device_id": "dev1"}, "device_state", "Normal")
+	// Device wear/temperature/error labels (WS2-20).
+	assertLabel(t, snap, "pflex_device_info", map[string]string{"device_id": "dev1"}, "temperature_state", "NormalTemperature")
+	assertLabel(t, snap, "pflex_device_info", map[string]string{"device_id": "dev1"}, "ssd_end_of_life_state", "NormalEndOfLife")
+	assertLabel(t, snap, "pflex_device_info", map[string]string{"device_id": "dev1"}, "error_state", "None")
 	assertLabel(t, snap, "pflex_sdc_info", map[string]string{"sdc_id": "sdc1"}, "mdm_connection_state", "Connected")
+	// Sdt is Gen2-only: it must NOT be emitted for a Gen1 cluster (WS2-09).
+	if _, ok := findSample(snap, "pflex_sdt_health", map[string]string{}); ok {
+		t.Error("pflex_sdt_health must not be emitted for Gen1")
+	}
 }
 
 func TestGen2StateSamples(t *testing.T) {
@@ -69,6 +77,9 @@ func TestGen2StateSamples(t *testing.T) {
 	assertSample(t, snap, "pflex_device_health", map[string]string{"device_id": "dev1"}, 0)
 	assertSample(t, snap, "pflex_sdc_health", map[string]string{"sdc_id": "sdc1"}, 0)
 	assertLabel(t, snap, "pflex_storagenode_info", map[string]string{"storage_node_id": "sn1"}, "membership_state", "Joined")
+	// Sdt (Gen2 NVMe/TCP target) health/info (WS2-09).
+	assertSample(t, snap, "pflex_sdt_health", map[string]string{"sdt_id": "sdt1"}, 0)
+	assertLabel(t, snap, "pflex_sdt_info", map[string]string{"sdt_id": "sdt1"}, "sdt_state", "Normal")
 }
 
 func TestStateHealthDegradedAndFailed(t *testing.T) {

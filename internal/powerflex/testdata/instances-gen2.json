@@ -5,7 +5,11 @@
     "links": []
   },
   "protectionDomainList": [
-    { "id": "pd1", "name": "pd-1", "links": [] }
+    {
+      "id": "pd1",
+      "name": "pd-1",
+      "links": []
+    }
   ],
   "storagePoolList": [
     {
@@ -13,7 +17,10 @@
       "name": "pool-1",
       "dataLayout": "ErasureCoding",
       "links": [
-        { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
+        {
+          "rel": "/api/parent/relationship/protectionDomainId",
+          "href": "/api/instances/ProtectionDomain::pd1"
+        }
       ]
     }
   ],
@@ -25,7 +32,10 @@
       "membershipState": "Joined",
       "maintenanceState": "NoMaintenance",
       "links": [
-        { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
+        {
+          "rel": "/api/parent/relationship/protectionDomainId",
+          "href": "/api/instances/ProtectionDomain::pd1"
+        }
       ]
     }
   ],
@@ -35,7 +45,10 @@
       "name": "dg-1",
       "mediaType": "SSD",
       "links": [
-        { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
+        {
+          "rel": "/api/parent/relationship/protectionDomainId",
+          "href": "/api/instances/ProtectionDomain::pd1"
+        }
       ]
     }
   ],
@@ -46,7 +59,10 @@
       "deviceCurrentPathName": "/dev/sdb",
       "deviceState": "Normal",
       "links": [
-        { "rel": "/api/parent/relationship/storageNodeId", "href": "/api/instances/StorageNode::sn1" }
+        {
+          "rel": "/api/parent/relationship/storageNodeId",
+          "href": "/api/instances/StorageNode::sn1"
+        }
       ]
     }
   ],
@@ -55,22 +71,40 @@
       "id": "vol1",
       "name": "volume-1",
       "volumeType": "ThinProvisioned",
-      "mappedSdcInfo": [{ "sdcId": "sdc1", "sdcIp": "10.0.0.9" }],
+      "mappedSdcInfo": [
+        {
+          "sdcId": "sdc1",
+          "sdcIp": "10.0.0.9"
+        }
+      ],
       "links": [
-        { "rel": "/api/parent/relationship/storagePoolId", "href": "/api/instances/StoragePool::sp1" }
+        {
+          "rel": "/api/parent/relationship/storagePoolId",
+          "href": "/api/instances/StoragePool::sp1"
+        }
       ]
     }
   ],
   "sdcList": [
-    { "id": "sdc1", "name": null, "sdcIp": "10.0.0.9", "mdmConnectionState": "Connected", "links": [] }
+    {
+      "id": "sdc1",
+      "name": null,
+      "sdcIp": "10.0.0.9",
+      "mdmConnectionState": "Connected",
+      "links": []
+    }
   ],
   "sdtList": [
     {
       "id": "sdt1",
       "name": "sdt-1",
       "links": [
-        { "rel": "/api/parent/relationship/protectionDomainId", "href": "/api/instances/ProtectionDomain::pd1" }
-      ]
+        {
+          "rel": "/api/parent/relationship/protectionDomainId",
+          "href": "/api/instances/ProtectionDomain::pd1"
+        }
+      ],
+      "sdtState": "Normal"
     }
   ]
 }

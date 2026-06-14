@@ -25,6 +25,14 @@ var healthSeverity = map[string]float64{
 	"Disconnected": 2,
 	"Decoupled":    2,
 	"Failed":       2,
+	// device wear / temperature / error states (WS2-20)
+	"NormalTemperature": 0,
+	"NormalEndOfLife":   0,
+	"None":              0,
+	"AboveThreshold":    1,
+	"EndOfLifeWarning":  1,
+	"Error":             2,
+	"EndOfLife":         2,
 }
 
 // severityOf returns the numeric severity for an operational-state string. Empty or
@@ -49,11 +57,21 @@ func nodeStateLabels(o *models.Instance) []Label {
 }
 
 func deviceStateLabels(o *models.Instance) []Label {
-	return []Label{{"device_state", o.DeviceState}}
+	return []Label{
+		{"device_state", o.DeviceState},
+		{"temperature_state", o.TemperatureState},
+		{"ssd_end_of_life_state", o.SsdEndOfLifeState},
+		{"error_state", o.ErrorState},
+	}
 }
 
 func sdcStateLabels(o *models.Instance) []Label {
 	return []Label{{"mdm_connection_state", o.MdmConnectionState}}
+}
+
+// sdtStateLabels returns the Sdt (Gen2 NVMe/TCP target) operational-state label (WS2-09).
+func sdtStateLabels(o *models.Instance) []Label {
+	return []Label{{"sdt_state", o.SdtState}}
 }
 
 // deriveStateSamples turns instance operational-state properties into health gauges and
@@ -72,6 +90,10 @@ func deriveStateSamples(clusterName, systemID string, in *models.Instances, rel 
 	samples = append(samples, emitState(clusterName, systemID, in, rel, builders, nodeType, metricPrefix[nodeType], nodeStateLabels)...)
 	samples = append(samples, emitState(clusterName, systemID, in, rel, builders, models.TypeDevice, metricPrefix[models.TypeDevice], deviceStateLabels)...)
 	samples = append(samples, emitState(clusterName, systemID, in, rel, builders, models.TypeSdc, metricPrefix[models.TypeSdc], sdcStateLabels)...)
+	// Sdt is a Gen2-only object type (NVMe/TCP target); emit its health only for Gen2 (WS2-09).
+	if gen == GenerationGen2 {
+		samples = append(samples, emitState(clusterName, systemID, in, rel, builders, models.TypeSdt, metricPrefix[models.TypeSdt], sdtStateLabels)...)
+	}
 	samples = append(samples, volumeMappingSamples(clusterName, systemID, in, rel, builders)...)
 	return samples
 }
@@ -120,6 +142,12 @@ func emitState(clusterName, systemID string, in *models.Instances, rel *models.R
 		stateLabels := fn(obj)
 		health := 0.0
 		for _, sl := range stateLabels {
+			// An empty value means the object did not report that (often optional) state
+			// field — it carries no health signal, so it must not force severity 2. A
+			// non-empty but unrecognized value still maps to 2 via severityOf.
+			if sl.Value == "" {
+				continue
+			}
 			if sev := severityOf(sl.Value); sev > health {
 				health = sev
 			}
