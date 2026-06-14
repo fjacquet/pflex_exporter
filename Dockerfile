@@ -28,7 +28,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 COPY --from=builder /app/pflex_exporter /usr/bin/pflex_exporter
 COPY config.yaml /etc/pflex_exporter/config.yaml
 
-EXPOSE 2113
+EXPOSE 9445
 
 USER pflex
 

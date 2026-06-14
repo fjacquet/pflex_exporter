@@ -11,7 +11,7 @@ services:
     image: ghcr.io/fjacquet/pflex_exporter:${PFLEX_TAG:-latest}
     container_name: pflex_exporter
     ports:
-      - "2113:2113"
+      - "9445:9445"
     volumes:
       - ./config.yaml:/etc/pflex_exporter/config.yaml:ro
       # Persist the log file (config.yaml -> logName). Owned by uid 10001 via the image.
@@ -52,6 +52,8 @@ services:
       # Bundled dashboards; gen1/ and gen2/ become Grafana folders.
       - ./grafana/gen1:/var/lib/grafana/dashboards/gen1:ro
       - ./grafana/gen2:/var/lib/grafana/dashboards/gen2:ro
+      # Companion dashboard (Grafana 1860) — requires a node_exporter scraped alongside.
+      - ./grafana/node-exporter-full.json:/var/lib/grafana/dashboards/node-exporter-full.json:ro
     depends_on:
       - prometheus
     restart: unless-stopped
