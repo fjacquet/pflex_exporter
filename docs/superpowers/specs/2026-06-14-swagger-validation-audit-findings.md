@@ -1,3 +1,82 @@
+# Swagger Validation Audit — Findings
+
+**Date:** 2026-06-14
+**Branch:** audit/swagger-validation
+**Spec:** docs/superpowers/specs/2026-06-14-swagger-validation-audit.md
+**Plan:** docs/superpowers/plans/2026-06-14-swagger-validation-audit.md
+**Trust rule:** reality (passing tests + live-cluster behavior + CLAUDE.md notes) outranks the swagger spec. Conflicts where reality already wins are flagged, not "fixed".
+
+## Headline
+
+- WS1 correctness: 8 MATCH, 5 MISMATCH(reality-wins), 0 BUG.
+- WS3 dashboards: 0 true dead panels, 17 fixture-only, 27 uncovered, 0 coverage gaps. 1 false positive (WS3-01).
+- WS2 coverage backlog: 20 items (HIGH 2, MED 10, LOW 8) — reported, not implemented.
+- Net actionable code/dashboard fixes: 0 (all WS1 discrepancies are reality-wins; WS2 is backlog; WS3 has no dead panels).
+
+## Tier legend
+
+- Tier 1: safe fix, applied directly (dead panel, doc mismatch).
+- Tier 2: contract/code bug — code disagrees with BOTH spec and reality.
+- Tier 3: reported only (spec-is-wrong notes, coverage gaps, ambiguous).
+
+## Summary table
+
+| ID | Workstream | Severity | Tier | One-line | Action |
+|----|-----------|----------|------|----------|--------|
+| WS1-01 | WS1 Correctness | Low | 3 | POST /rest/auth/login path+method matches spec | none (MATCH) |
+| WS1-02 | WS1 Correctness | Low | 3 | POST /rest/auth/login request body username/password matches spec | none (MATCH) |
+| WS1-03 | WS1 Correctness | Low | 3 | POST /rest/auth/login response access_token/refresh_token matches spec | none (MATCH) |
+| WS1-04 | WS1 Correctness | Low | 3 | POST /rest/auth/update-token path+method matches spec | none (MATCH) |
+| WS1-05 | WS1 Correctness | Low | 3 | POST /rest/auth/update-token request body refresh_token matches spec | none (MATCH) |
+| WS1-06 | WS1 Correctness | Low | 3 | POST /rest/auth/update-token response tokens match spec | none (MATCH) |
+| WS1-07 | WS1 Correctness | Med | 3 | GET /api/instances aggregate route absent from spec; real endpoint confirmed | none (reality-wins) |
+| WS1-08 | WS1 Correctness | Med | 3 | POST /api/instances/querySelectedStatistics absent from spec; real endpoint confirmed | none (reality-wins) |
+| WS1-09 | WS1 Correctness | Med | 3 | Gen1 batch body selectedStatisticsList undocumented in spec; live contract confirmed | none (reality-wins) |
+| WS1-10 | WS1 Correctness | Low | 3 | POST /dtapi/rest/v1/metrics/query path+method matches spec | none (MATCH) |
+| WS1-11 | WS1 Correctness | Low | 3 | dtapi resource_type one-per-call matches spec | none (MATCH) |
+| WS1-12 | WS1 Correctness | High | 3 | dtapi metrics field: spec=string, reality=JSON array; code sends array (correct) | none (reality-wins) — NEVER change |
+| WS1-13 | WS1 Correctness | Med | 3 | GET /api/instances Gen2 aggregate absent from spec; same as WS1-07 | none (reality-wins) |
+| WS2-01 | WS2 Coverage | Med | 3 | Sdr (Gen1) uncollected — replication throughput/connectivity | report-only |
+| WS2-02 | WS2 Coverage | Med | 3 | ReplicationConsistencyGroup (Gen1) uncollected — RPO compliance/journal | report-only |
+| WS2-03 | WS2 Coverage | Med | 3 | ReplicationPair (Gen1) uncollected — per-pair initial-copy progress | report-only |
+| WS2-04 | WS2 Coverage | Low | 3 | FaultSet (Gen1) uncollected — failure-domain grouping, no unique signal | report-only |
+| WS2-05 | WS2 Coverage | Low | 3 | AccelerationPool (Gen1) uncollected — rfcache/NVDIMM acceleration tier | report-only |
+| WS2-06 | WS2 Coverage | Low | 3 | VTree (Gen1+Gen2) uncollected — snapshot lineage, high cardinality | report-only |
+| WS2-07 | WS2 Coverage | Low | 3 | SnapshotPolicy (Gen1+Gen2) uncollected — auto-snapshot success/failure | report-only |
+| WS2-08 | WS2 Coverage | Low | 3 | RemoteSystem/PeerMdm (Gen1) uncollected — peer-cluster connectivity | report-only |
+| WS2-09 | WS2 Coverage | Med | 3 | Sdt (Gen2) stats collected but no pflex_sdt_health/_info state metric | report-only |
+| WS2-10 | WS2 Coverage | Low | 3 | Dgwt (Gen2) uncollected — internal device-group write-cache table, skip | report-only |
+| WS2-11 | WS2 Coverage | High | 3 | PD/StoragePool degraded/failed capacity stats uncollected (Gen1) | report-only |
+| WS2-12 | WS2 Coverage | High | 3 | PD/StoragePool rebuild/rebalance remaining-capacity & job progress uncollected | report-only |
+| WS2-13 | WS2 Coverage | Med | 3 | System/PD inventory counts (numOfSds, numOfVolumes, etc.) uncollected (Gen1) | report-only |
+| WS2-14 | WS2 Coverage | Med | 3 | PD replication latency/BWC/RPO stats uncollected (Gen1) | report-only |
+| WS2-15 | WS2 Coverage | Med | 3 | StoragePool/PD snapshot capacity stats partially uncollected (Gen1) | report-only |
+| WS2-16 | WS2 Coverage | Low | 3 | SDS/PD rfcache hit/miss stats uncollected (Gen1) | report-only |
+| WS2-17 | WS2 Coverage | Med | 3 | PD target/journaler latency split uncollected (Gen1) | report-only |
+| WS2-18 | WS2 Coverage | Low | 3 | Volume compressionRatio/numOfMappedSdcs/lineage labels missing | report-only |
+| WS2-19 | WS2 Coverage | Med | 3 | StorageNode host_* IOPS/BW/latency possibly uncollected (Gen2) | report-only |
+| WS2-20 | WS2 Coverage | Med | 3 | Device temperatureState/ssdEndOfLifeState/errorState not feeding health | report-only |
+| WS3-01 | WS3 Dashboards | Low | 3 | pflex_exporter is a dashboard tag, not a metric — false positive extraction | none (false positive) |
+| WS3-02 | WS3 Dashboards | Low | 3 | pflex_cluster_data_reduction_ratio: fixture-only (v5Metrics emittable, Gen2) | none (fixture-only) |
+| WS3-03 | WS3 Dashboards | Low | 3 | pflex_cluster_efficiency_ratio: fixture-only (v5Metrics emittable, Gen2) | none (fixture-only) |
+| WS3-04 | WS3 Dashboards | Low | 3 | pflex_cluster_logical_provisioned: fixture-only (v5Metrics emittable, Gen2) | none (fixture-only) |
+| WS3-05 | WS3 Dashboards | Low | 3 | pflex_cluster_logical_used: fixture-only (v5Metrics emittable, Gen2) | none (fixture-only) |
+| WS3-06 | WS3 Dashboards | Low | 3 | pflex_cluster_physical_free: fixture-only (v5Metrics emittable, Gen2) | none (fixture-only) |
+| WS3-07 | WS3 Dashboards | Low | 3 | pflex_cluster_physical_total: fixture-only (v5Metrics emittable, Gen2) | none (fixture-only) |
+| WS3-08 | WS3 Dashboards | Low | 3 | pflex_cluster_spare_capacity_in_kb: fixture-only (Gen1 stat, emittable) | none (fixture-only) |
+| WS3-09 | WS3 Dashboards | Low | 3 | pflex_cluster_thick_capacity_in_use_in_kb: fixture-only (Gen1 stat, emittable) | none (fixture-only) |
+| WS3-10 | WS3 Dashboards | Low | 3 | pflex_cluster_thin_capacity_allocated_in_kb: fixture-only (Gen1 stat, emittable) | none (fixture-only) |
+| WS3-11 | WS3 Dashboards | Low | 3 | pflex_device_bandwidth_bytes_per_second: fixture-only (Gen2 v5KindBW, emittable) | none (fixture-only) |
+| WS3-12 | WS3 Dashboards | Low | 3 | pflex_device_io_size_bytes: fixture-only (Gen2 v5KindIOSize, emittable) | none (fixture-only) |
+| WS3-13 | WS3 Dashboards | Low | 3 | pflex_sdc_bandwidth_bytes_per_second: fixture-only (Gen2 v5KindBW, emittable) | none (fixture-only) |
+| WS3-14 | WS3 Dashboards | Low | 3 | pflex_storagenode_latency_microseconds: fixture-only (Gen2 v5KindLatency, emittable) | none (fixture-only) |
+| WS3-15 | WS3 Dashboards | Low | 3 | pflex_storagepool_bandwidth_bytes_per_second: fixture-only (Gen2 v5KindBW, emittable) | none (fixture-only) |
+| WS3-16 | WS3 Dashboards | Low | 3 | pflex_storagepool_data_reduction_ratio: fixture-only (Gen2 v5Metrics, emittable) | none (fixture-only) |
+| WS3-17 | WS3 Dashboards | Low | 3 | pflex_storagepool_physical_total: fixture-only (Gen2 v5Metrics, emittable) | none (fixture-only) |
+| WS3-18 | WS3 Dashboards | Low | 3 | pflex_volume_logical_provisioned: fixture-only (Gen2 v5Metrics, emittable) | none (fixture-only) |
+
+---
+
 # Swagger-validation audit findings — 2026-06-14
 
 ## WS3 — Grafana dashboard validation
