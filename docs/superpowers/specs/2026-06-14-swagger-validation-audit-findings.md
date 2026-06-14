@@ -317,7 +317,7 @@ for node (Sds/StorageNode), Device, Sdc only.
 
 ### Summary
 
-- **HIGH: 2** (WS2-11 degraded/failed capacity, WS2-12 rebuild/rebalance progress), **MED: 9** (WS2-01/02/03/09/13/14/15/17/19/20 — note WS2-20 counted here), **LOW: 8** (WS2-04/05/06/07/08/10/16/18). (Counts: HIGH 2, MED 10, LOW 8 across 20 rows.)
+- **HIGH: 2** (WS2-11 degraded/failed capacity, WS2-12 rebuild/rebalance progress), **MED: 10** (WS2-01/02/03/09/13/14/15/17/19/20), **LOW: 8** (WS2-04/05/06/07/08/10/16/18). Total: 20 rows.
 - **Top 3 recommended additions:**
   1. **WS2-12 — rebuild/rebalance remaining-capacity & job-progress (Gen1; Gen2 already has the rate)**: the single most-requested "is my cluster healthy / how long until protected" operational signal; today only the throughput rate is exported.
   2. **WS2-11 — degraded/failed capacity on PD & StoragePool**: direct redundancy-at-risk gauge; trivially available (already in the Gen1 stat request for PD) and belongs on every health dashboard.
