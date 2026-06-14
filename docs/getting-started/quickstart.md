@@ -9,8 +9,8 @@ export PFLEX1_PASSWORD='your-monitor-password'
 Then:
 
 ```bash
-curl -s localhost:2113/metrics | grep '^pflex_up'
-curl -s localhost:2113/health
+curl -s localhost:9445/metrics | grep '^pflex_up'
+curl -s localhost:9445/health
 ```
 
 You should see `pflex_up{cluster="flex-cluster1"} 1` once the first collection cycle
@@ -57,7 +57,7 @@ OpenTelemetry Collector:
 PFLEX1_PASSWORD='your-monitor-password' docker compose up --build
 ```
 
-- Exporter metrics: <http://localhost:2113/metrics>
+- Exporter metrics: <http://localhost:9445/metrics>
 - Prometheus: <http://localhost:9090>
 - Grafana: <http://localhost:3000> (login `admin` / `admin`; PowerFlex dashboards under the **gen1** / **gen2** folders)
 - OTLP collector receives the push when `opentelemetry.metrics.enabled: true`.

@@ -8,7 +8,7 @@ data:
   config.yaml: |
     server:
       host: "0.0.0.0"
-      port: "2113"
+      port: "9445"
       uri: "/metrics"
       logName: "" # empty -> stdout, captured by the pod logs
     collection:

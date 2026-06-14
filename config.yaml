@@ -5,7 +5,7 @@
 
 server:
   host: "0.0.0.0"
-  port: "2113"
+  port: "9445"
   uri: "/metrics"
   # Absolute path so it resolves the same in containers and under systemd.
   # Empty string -> stdout only (recommended for k8s/systemd, captured by the runtime).

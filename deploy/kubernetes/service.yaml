@@ -9,5 +9,5 @@ spec:
     app.kubernetes.io/name: pflex-exporter
   ports:
     - name: metrics
-      port: 2113
+      port: 9445
       targetPort: metrics
