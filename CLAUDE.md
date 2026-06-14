@@ -56,6 +56,8 @@ A Go exporter for **Dell PowerFlex (Gen1 and Gen2)** that exposes metrics via **
 
 `internal/powerflex/client_test.go` runs a mock PowerFlex gateway (`httptest` TLS) that serves `/rest/auth/*`, `/api/instances`, the Gen1 `querySelectedStatistics` endpoint and the Gen2 `/dtapi/rest/v1/metrics/query` endpoint from `testdata/` fixtures (`instances*.json`, `statistics.json`, `statistics-v5.json`). Collector tests assert results via **both** the Prometheus registry gather and an OTLP `ManualReader`. Test HTTP handlers write fixtures through a `writeBytes(io.Writer, …)` helper to avoid the semgrep "write-to-ResponseWriter" rule.
 
+- `docs/swagger/` holds the pinned Dell PowerFlex REST API specs (4.5.x / 5.0.x) used as the reference for the swagger-validation audit. `internal/powerflex/dump_metrics_test.go` (`TestDumpEmittedMetricNames`) is an audit-only helper that prints the exporter's concrete emitted metric-name set; it skips unless `PFLEX_DUMP_METRICS=1` is set, so it stays out of normal `make ci`.
+
 ## CI/CD
 
 `.github/workflows/`: `ci.yml` (`make ci` + SBOM artifact + Semgrep), `release.yml` (on `v*` tags: a **GoReleaser** job for binaries/archives + SBOM + a **Homebrew cask** to a GitHub Release, plus a separate multi-arch GHCR image job with SBOM/provenance attestations), `docs.yml` (MkDocs → GitHub Pages via `configure-pages`/`deploy-pages`). The cask publishes to the `fjacquet/homebrew-tap` repo and needs a `HOMEBREW_TAP_GITHUB_TOKEN` secret (cross-repo PAT); it **self-skips** when that secret is empty/absent, so releases don't break before the tap exists. The repo's GitHub Pages `build_type` is `workflow` (Actions deployment), not branch-based. The supply-chain rationale is recorded in `docs/adr/0001-ci-supply-chain-hardening.md`.

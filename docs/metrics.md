@@ -3,6 +3,11 @@
 All metrics are gauges named `pflex_<object>_<metric>` and carry a `cluster` label (the
 configured cluster name) plus `cluster_id` (the PowerFlex System id).
 
+> This page documents metric **families** and conventions. The authoritative, concrete
+> emitted metric-name set is generated from the collector via the dump test
+> (`PFLEX_DUMP_METRICS=1 go test ./internal/powerflex/ -run TestDumpEmittedMetricNames`),
+> not hand-enumerated here.
+
 ## Object prefixes
 
 | PowerFlex type | Metric prefix |
