@@ -85,6 +85,28 @@ snake_case, e.g.:
 Capacity values are reported in **KiB** (`*_in_kb`), matching the PowerFlex API. Multiply
 by 1024 in PromQL if you need bytes.
 
+**Redundancy & rebuild/rebalance (Gen1; System / StoragePool / ProtectionDomain):**
+
+- Capacity-at-risk: `pflex_<obj>_degraded_failed_capacity_in_kb`,
+  `pflex_<obj>_failed_capacity_in_kb`, `pflex_<obj>_degraded_healthy_capacity_in_kb`,
+  `pflex_<obj>_spare_capacity_in_kb`.
+- Rebuild/rebalance remaining capacity: `pflex_<obj>_fwd_rebuild_capacity_in_kb`,
+  `pflex_<obj>_bck_rebuild_capacity_in_kb`, `pflex_<obj>_norm_rebuild_capacity_in_kb`,
+  `pflex_<obj>_rebalance_capacity_in_kb` (the *rate* of rebuild/rebalance remains the
+  `*RebuildBwc`-derived `iops`/`bandwidth`).
+- Data-movement job counts: `pflex_<obj>_pending_moving_in_bck_rebuild_jobs`,
+  `pflex_<obj>_active_moving_in_bck_rebuild_jobs`, and the `out`/`fwd_rebuild`/`rebalance`
+  variants.
+- Snapshot capacity: `pflex_<obj>_snapshot_capacity_in_kb`,
+  `pflex_<obj>_net_snapshot_capacity_in_kb`, `pflex_<obj>_snap_capacity_in_use_in_kb`.
+
+**Back-end latency (Gen1):** `pflex_protectiondomain_latency{op="target"|"journaler"}`
+(and `op="target"` on StoragePool) split read/write — complements the host-side
+`op="userData"` latency for localizing a latency problem to the device/journal tier.
+
+**Inventory counts (Gen1; from System instance properties):**
+`pflex_cluster_num_of_volumes`, `pflex_cluster_num_of_sds`, `pflex_cluster_num_of_devices`.
+
 ## Gen2 differences
 
 The generation is detected per cluster (storage-pool `dataLayout`: ErasureCoding = Gen2)
@@ -117,8 +139,8 @@ explicit units and Gen2-specific labels:
 | `pflex_up` | `cluster` | `1` if the cluster was scraped successfully this cycle, else `0`. |
 | `pflex_last_scrape_timestamp_seconds` | `cluster` | Unix time of the last successful collection. |
 | `pflex_cluster_generation` | `cluster`, `generation` | Always `1`; the `generation` label is `gen1`, `gen2`, or `unknown`. |
-| `pflex_<obj>_health` | object identity/parent labels | Operational severity: `0`=healthy, `1`=degraded, `2`=failed/disconnected/unknown. Emitted for SDS/StorageNode, Device, SDC. |
-| `pflex_<obj>_info` | identity labels + raw state strings | Always `1`; carries raw PowerFlex state strings (`mdm_connection_state`, `membership_state`, `maintenance_state`, `device_state`). |
+| `pflex_<obj>_health` | object identity/parent labels | Operational severity: `0`=healthy, `1`=degraded, `2`=failed/disconnected/unknown. Emitted for SDS/StorageNode, Device, SDC, and **Sdt (Gen2 only)**. An unreported (empty) optional state field carries no signal and does not force `2`. |
+| `pflex_<obj>_info` | identity labels + raw state strings | Always `1`; carries raw PowerFlex state strings (`mdm_connection_state`, `membership_state`, `maintenance_state`, `device_state`; Device also `temperature_state`, `ssd_end_of_life_state`, `error_state`; Sdt `sdt_state`). |
 | `pflex_volume_mapped_sdc` | volume identity/parent labels + `sdc_id`, `sdc_ip` | Always `1`; one series per volume→SDC mapping, correlating a volume with each host consuming it. |
 
 ### Operational state
