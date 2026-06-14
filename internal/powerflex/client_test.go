@@ -385,7 +385,7 @@ func TestGen1StatsPerTypeIsolation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetStatistics should degrade, not error, on one failed type: %v", err)
 	}
-	if stats.System == nil || len(stats.System) == 0 {
+	if len(stats.System) == 0 {
 		t.Error("System stats missing despite only Device failing")
 	}
 	if d := stats.ByType[models.TypeDevice]; len(d) > 0 {
