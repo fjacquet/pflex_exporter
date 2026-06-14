@@ -154,13 +154,57 @@ func (c *ClusterClient) GetInstances(ctx context.Context) (*models.Instances, *m
 	return models.ParseInstances(body)
 }
 
-// GetStatistics fetches and parses POST /api/instances/querySelectedStatistics (Gen1).
+// gen1QueryConcurrency bounds how many per-type querySelectedStatistics calls run at once.
+// Gen1 fans out one call per object type so a single rejected stat name degrades only that
+// type instead of failing the whole cluster's Gen1 collection (ADR 0002).
+const gen1QueryConcurrency = 8
+
+// GetStatistics fetches Gen1 statistics by querying querySelectedStatistics once per object
+// type, concurrently. A failed per-type query is logged and skipped (graceful
+// degradation); the call errors only when every type query fails. See ADR 0002.
 func (c *ClusterClient) GetStatistics(ctx context.Context) (*models.Statistics, error) {
-	body, err := c.post(ctx, statisticsPath, queryStatsBody)
+	bodies, err := gen1PerTypeBodies()
 	if err != nil {
 		return nil, err
 	}
-	return models.ParseStatistics(body)
+
+	agg := &models.Statistics{ByType: make(map[string]map[string]models.StatMap)}
+	var mu sync.Mutex // guards agg
+	var succeeded int32
+
+	var g errgroup.Group
+	g.SetLimit(gen1QueryConcurrency)
+
+	attempted := 0
+	for typeName, body := range bodies {
+		attempted++
+		typeName, body := typeName, body
+		g.Go(func() error {
+			respBody, err := c.post(ctx, statisticsPath, body)
+			if err != nil {
+				log.Warnf("cluster %q: Gen1 stats query for %s failed: %v", c.name, typeName, err)
+				return nil // graceful degradation: one failed type must not sink the rest (ADR 0002)
+			}
+			parsed, err := models.ParseStatistics(respBody)
+			if err != nil {
+				log.Warnf("cluster %q: failed to parse Gen1 stats for %s: %v", c.name, typeName, err)
+				return nil
+			}
+			mu.Lock()
+			agg.Merge(parsed)
+			mu.Unlock()
+			atomic.AddInt32(&succeeded, 1)
+			return nil
+		})
+	}
+	_ = g.Wait()
+
+	// Partial failures degrade gracefully; a total failure is a hard error so the collector
+	// can fall back to the other statistics path.
+	if attempted > 0 && atomic.LoadInt32(&succeeded) == 0 {
+		return nil, fmt.Errorf("cluster %q: all %d Gen1 stat queries failed", c.name, attempted)
+	}
+	return agg, nil
 }
 
 // v5QueryConcurrency bounds how many per-type dtapi metric queries run at once. The

@@ -31,7 +31,9 @@ type mockGateway struct {
 	statsV5Count     int    // Gen2 v5 metrics/query calls
 	failRefresh      bool   // when true, /rest/auth/update-token returns 400
 	failInstances    bool   // when true, /api/instances returns 500
-	failStats        bool   // when true, Gen1 querySelectedStatistics returns 500
+	failStats        bool   // when true, Gen1 querySelectedStatistics returns 404 (fallback test)
+	failAllStats     bool   // when true, every per-type Gen1 query returns 500
+	failStatsType    string // when set, the per-type Gen1 query for this type returns 500
 	failStatsV5      bool   // when true, Gen2 v5 metrics/query returns 500
 	instancesFixture string // fixture file served by /api/instances
 
@@ -89,9 +91,22 @@ func newMockGateway(t *testing.T) *mockGateway {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+		body, _ := io.ReadAll(r.Body)
+		var req struct {
+			SelectedStatisticsList []struct {
+				Type string `json:"type"`
+			} `json:"selectedStatisticsList"`
+		}
+		_ = json.Unmarshal(body, &req)
+		typ := ""
+		if len(req.SelectedStatisticsList) == 1 {
+			typ = req.SelectedStatisticsList[0].Type
+		}
 		g.mu.Lock()
 		g.statsCount++
 		fail := g.failStats
+		failAll := g.failAllStats
+		failType := g.failStatsType
 		g.mu.Unlock()
 		if fail {
 			// 404 (not 5xx) so resty does not retry: simulates an endpoint removed in a
@@ -99,8 +114,22 @@ func newMockGateway(t *testing.T) *mockGateway {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
+		if failAll || (failType != "" && failType == typ) {
+			w.WriteHeader(http.StatusInternalServerError)
+			writeBytes(w, []byte(`{"message":"injected failure"}`))
+			return
+		}
+		// Gen1 now queries one type per call (ADR 0002): return only that type's segment
+		// of the fixture so the per-type fan-out and fault injection are exercised.
+		var all map[string]json.RawMessage
+		_ = json.Unmarshal(readFixture(t, "statistics.json"), &all)
+		out := map[string]json.RawMessage{}
+		if seg, ok := all[typ]; ok {
+			out[typ] = seg
+		}
 		w.Header().Set("Content-Type", "application/json")
-		writeBytes(w, readFixture(t, "statistics.json"))
+		segBytes, _ := json.Marshal(out)
+		writeBytes(w, segBytes)
 	})
 	mux.HandleFunc("/dtapi/rest/v1/metrics/query", func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
@@ -341,6 +370,39 @@ func TestGetStatisticsParses(t *testing.T) {
 	}
 	if vol := stats.Object(models.TypeVolume, "vol1"); vol == nil {
 		t.Error("expected stats for vol1")
+	}
+}
+
+// TestGen1StatsPerTypeIsolation guards ADR 0002: one object type's failed querySelectedStatistics
+// query degrades only that type, not the whole cluster's Gen1 collection.
+func TestGen1StatsPerTypeIsolation(t *testing.T) {
+	g := newMockGateway(t)
+	g.failStatsType = models.TypeDevice // only the Device per-type query fails
+	c := g.client(t)
+	defer func() { _ = c.Close() }()
+
+	stats, err := c.GetStatistics(context.Background())
+	if err != nil {
+		t.Fatalf("GetStatistics should degrade, not error, on one failed type: %v", err)
+	}
+	if len(stats.System) == 0 {
+		t.Error("System stats missing despite only Device failing")
+	}
+	if d := stats.ByType[models.TypeDevice]; len(d) > 0 {
+		t.Error("Device stats should be absent when its per-type query was injected to fail")
+	}
+}
+
+// TestGen1StatsAllTypesFail guards ADR 0002: a total failure (every type query fails) is a
+// hard error so the collector can fall back to the other statistics path.
+func TestGen1StatsAllTypesFail(t *testing.T) {
+	g := newMockGateway(t)
+	g.failAllStats = true
+	c := g.client(t)
+	defer func() { _ = c.Close() }()
+
+	if _, err := c.GetStatistics(context.Background()); err == nil {
+		t.Fatal("expected error when every Gen1 stat query fails")
 	}
 }
 

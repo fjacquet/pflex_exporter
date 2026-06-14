@@ -61,6 +61,34 @@ func ParseStatistics(body []byte) (*Statistics, error) {
 	return stats, nil
 }
 
+// Merge folds another parsed Statistics into s: System stats overwrite (last wins) and
+// per-type object maps are merged by type then object ID. Used to combine the per-type
+// querySelectedStatistics responses of the Gen1 fan-out (ADR 0002) into one aggregate.
+func (s *Statistics) Merge(other *Statistics) {
+	if other == nil {
+		return
+	}
+	if other.System != nil {
+		if s.System == nil {
+			s.System = make(StatMap, len(other.System))
+		}
+		for k, v := range other.System {
+			s.System[k] = v
+		}
+	}
+	if s.ByType == nil {
+		s.ByType = make(map[string]map[string]StatMap)
+	}
+	for typ, byID := range other.ByType {
+		if s.ByType[typ] == nil {
+			s.ByType[typ] = make(map[string]StatMap, len(byID))
+		}
+		for id, sm := range byID {
+			s.ByType[typ][id] = sm
+		}
+	}
+}
+
 // Object returns the StatMap for a given type and object ID, or nil if absent.
 func (s *Statistics) Object(objType, id string) StatMap {
 	if byID, ok := s.ByType[objType]; ok {

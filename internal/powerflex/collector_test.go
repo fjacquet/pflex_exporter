@@ -156,6 +156,43 @@ func labelsMatch(labels []Label, match map[string]string) bool {
 	return true
 }
 
+// TestGen1NewCoverageMetrics asserts the WS2-11/12/15/17 stats added to
+// querySelectedStatistics.json are emitted by the automatic Gen1 derivation.
+func TestGen1NewCoverageMetrics(t *testing.T) {
+	c, store := newTestCollector(t)
+	c.CollectOnce(context.Background())
+
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(NewPromCollector(store))
+	mfs, err := reg.Gather()
+	if err != nil {
+		t.Fatalf("gather: %v", err)
+	}
+
+	// Scalar capacity / job-count gauges (WS2-11/12/15).
+	for _, name := range []string{
+		"pflex_cluster_degraded_healthy_capacity_in_kb",
+		"pflex_cluster_fwd_rebuild_capacity_in_kb",
+		"pflex_cluster_snap_capacity_in_use_in_kb",
+		"pflex_storagepool_degraded_healthy_capacity_in_kb",
+		"pflex_storagepool_rebalance_capacity_in_kb",
+		"pflex_storagepool_pending_moving_in_bck_rebuild_jobs",
+		"pflex_protectiondomain_bck_rebuild_capacity_in_kb",
+	} {
+		if _, ok := gatheredValue(mfs, name, map[string]string{}); !ok {
+			t.Errorf("missing expected Gen1 coverage metric %q", name)
+		}
+	}
+
+	// Target/journaler latency (WS2-17) — the Latency suffix splits into op/direction.
+	if _, ok := gatheredValue(mfs, "pflex_protectiondomain_latency", map[string]string{"op": "target", "direction": "read"}); !ok {
+		t.Error("missing pflex_protectiondomain_latency{op=target,direction=read}")
+	}
+	if _, ok := gatheredValue(mfs, "pflex_cluster_latency", map[string]string{"op": "journaler", "direction": "write"}); !ok {
+		t.Error("missing pflex_cluster_latency{op=journaler,direction=write}")
+	}
+}
+
 func gatheredValue(mfs []*dto.MetricFamily, name string, match map[string]string) (float64, bool) {
 	for _, mf := range mfs {
 		if mf.GetName() != name {
@@ -211,4 +248,14 @@ func otlpAttrsMatch(dp metricdata.DataPoint[float64], match map[string]string) b
 		}
 	}
 	return true
+}
+
+// TestInventoryCountMetrics asserts cluster inventory counts emit from System properties (WS2-13).
+func TestInventoryCountMetrics(t *testing.T) {
+	c, store := newTestCollector(t)
+	c.CollectOnce(context.Background())
+	snap := store.Load()
+	assertSample(t, snap, "pflex_cluster_num_of_volumes", map[string]string{"cluster": "test-cluster"}, 2)
+	assertSample(t, snap, "pflex_cluster_num_of_sds", map[string]string{"cluster": "test-cluster"}, 3)
+	assertSample(t, snap, "pflex_cluster_num_of_devices", map[string]string{"cluster": "test-cluster"}, 6)
 }
