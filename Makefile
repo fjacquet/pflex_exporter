@@ -1,27 +1,70 @@
+# Canonical Go Makefile — fjacquet/ci standard interface (do not rename targets)
+.DEFAULT_GOAL := all
 BIN     = pflex_exporter
-DIST    = dist
+DIST    ?= dist
+COVER   ?= coverage.out
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS = -s -w -X main.version=$(VERSION)
-# Cross-compilation targets are defined in .goreleaser.yaml (builds.goos/goarch).
 
 # Pinned tool versions (installed by `make tools`).
-GOLANGCI_LINT_VERSION   ?= v2.12.2
-CYCLONEDX_GOMOD_VERSION ?= latest
-GOVULNCHECK_VERSION     ?= latest
+GOLANGCI_VERSION   ?= v2.12.2
+GORELEASER_VERSION ?= v2.16.0
 
-all: cli test docker
+.PHONY: all clean install tools lint format test build vuln sbom security docs \
+        coverage-upload release ci \
+        fmt-check fmt vet test-race test-coverage sure \
+        cli release-snapshot docker run-cli clean-dist
 
-# Install pinned dev/CI tooling into $(GOBIN)/$GOPATH/bin.
+all: clean lint test build
+
+clean:
+	rm -rf $(DIST) site $(COVER) *.sarif
+	rm -f bin/$(BIN) coverage.html
+
+install:
+	go mod download
+
+# Install pinned dev/CI tooling into $GOPATH/bin.
 tools:
-	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
-	go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@$(CYCLONEDX_GOMOD_VERSION)
-	go install golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION)
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION)
+	go install golang.org/x/vuln/cmd/govulncheck@latest
+	go install github.com/goreleaser/goreleaser/v2@$(GORELEASER_VERSION)
 
-# Just the SBOM generator — used by the release pipeline (GoReleaser sboms hook).
-tools-sbom:
-	go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@$(CYCLONEDX_GOMOD_VERSION)
+lint:
+	golangci-lint run --timeout=5m
 
-# --- quality gates (used by CI) ---
+format:
+	golangci-lint fmt
+
+test:
+	go test -race -coverprofile=$(COVER) -covermode=atomic ./...
+
+build:
+	go build -v ./...
+
+vuln:
+	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+sbom:
+	mkdir -p $(DIST)
+	go run github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@latest mod -json -output $(DIST)/sbom.cdx.json
+
+security:
+	uvx semgrep scan --config auto --error --skip-unknown-extensions
+
+docs:
+	uvx --with mkdocs-material --with pymdown-extensions mkdocs build --strict --site-dir site
+
+coverage-upload:
+	uvx --from codecov-cli codecov upload-process --file $(COVER) || true
+
+release:
+	goreleaser release --clean
+
+# Aggregate gate run by CI.
+ci: lint test build vuln
+
+# --- repo-specific convenience targets ---
 
 fmt-check:
 	@test -z "$$(gofmt -l .)" || (echo "gofmt needed in:"; gofmt -l .; exit 1)
@@ -32,48 +75,22 @@ fmt:
 vet:
 	go vet ./...
 
-lint:
-	golangci-lint run ./...
+test-race: test
 
-test:
-	go test ./...
-
-test-race:
-	go test -race -coverprofile=coverage.out -covermode=atomic ./...
-
-test-coverage: test-race
-	go tool cover -html=coverage.out -o coverage.html
-
-vuln:
-	govulncheck ./...
-
-# Aggregate gate run by CI.
-ci: fmt-check vet lint test-race vuln
+test-coverage: test
+	go tool cover -html=$(COVER) -o coverage.html
 
 # Local convenience: format, vet, test, build, lint.
 sure: fmt vet test
 	go build ./...
 	golangci-lint run
 
-# --- artifacts ---
-
+# Build single binary for local use.
 cli:
 	go build -ldflags="$(LDFLAGS)" -o bin/$(BIN) .
 
-# CycloneDX SBOM for the Go module (source/dependency SBOM).
-sbom:
-	@mkdir -p $(DIST)
-	cyclonedx-gomod mod -licenses -json -output $(DIST)/sbom.cdx.json
-	@echo "wrote $(DIST)/sbom.cdx.json"
-
-# Cross-compiled binaries + archives + SBOM + checksums + GitHub Release.
-# Driven by GoReleaser (.goreleaser.yaml). Real releases run from a `v*` tag in CI;
-# this target reproduces that pipeline locally — needs a tag and GITHUB_TOKEN.
-release: tools-sbom
-	goreleaser release --clean
-
 # Local dry-run: full pipeline (build, archive, SBOM, checksums) without publishing.
-release-snapshot: tools-sbom
+release-snapshot:
 	goreleaser release --snapshot --clean
 	@echo "release artifacts in $(DIST)/"
 
@@ -85,9 +102,3 @@ run-cli: cli
 
 clean-dist:
 	rm -rf $(DIST)
-
-clean: clean-dist
-	rm -f bin/$(BIN) coverage.out coverage.html
-
-.PHONY: all tools tools-sbom fmt-check fmt vet lint test test-race test-coverage vuln ci sure \
-        cli sbom release release-snapshot docker run-cli clean-dist clean
