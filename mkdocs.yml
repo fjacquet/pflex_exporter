@@ -55,3 +55,6 @@ nav:
   - CI/CD & SBOM: cicd.md
   - Architecture Decisions:
       - ADR 0001 — CI supply-chain hardening: adr/0001-ci-supply-chain-hardening.md
+
+extra:
+  version: v0.10.3
