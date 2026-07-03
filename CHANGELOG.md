@@ -7,12 +7,114 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.5] - 2026-07-03
+
 ### Added
 
 - **`pflex_exporter_build_info` metric.** An exporter-level gauge (constant `1`) carrying the
   running exporter `version` and `goversion` labels, so a `/metrics` scrape reveals exactly
   which build is running. Standard Prometheus build-info pattern; part of a family-wide
   standardization across the exporter fleet.
+
+### Changed
+
+- Bumped `google.golang.org/grpc` from 1.81.1 to 1.82.0.
+
+## [0.10.4] - 2026-07-01
+
+### Changed
+
+- **Docs:** documented handling of special characters in the monitoring password, and switched
+  the MkDocs favicon and logo to the brand icon.
+- Bumped `azure/setup-helm` from 5.0.0 to 5.0.1.
+
+## [0.10.3] - 2026-06-20
+
+### Changed
+
+- **CI reusability.** Migrated to the `fjacquet/ci` make-based reusable workflows, made the
+  `security` job advisory to match the central default, and enabled auto-merge of Dependabot
+  PRs once required checks pass. Routine fleet health refresh.
+
+## [0.10.2] - 2026-06-19
+
+### Changed
+
+- Bumped `actions/checkout` from 6.0.3 to 7.0.0.
+
+## [0.10.1] - 2026-06-16
+
+### Added
+
+- **Helm chart** for Kubernetes deployment, published in lockstep with each release.
+
+## [0.10.0] - 2026-06-14
+
+### Changed
+
+- **BREAKING: canonical metrics port is now `9445`** (previously `2113`), aligning the exporter
+  with the fleet's assigned port. Update scrape configs and deployment manifests accordingly.
+
+### Added
+
+- Node Exporter Full (dashboard 1860) added to the bundled Grafana stack.
+
+## [0.9.3] - 2026-06-14
+
+### Changed
+
+- **Grafana redesign.** Reworked all 16 dashboards for a more focused, logical layout.
+
+## [0.9.2] - 2026-06-14
+
+### Added
+
+- **WS2 Milestone A coverage metrics**, with Gen1 per-type statistics isolation so one failing
+  resource type no longer degrades the others.
+
+### Changed
+
+- Default metrics port changed from `2112` to `2113`.
+- Validated the implementation against the pinned PowerFlex swagger specs (audit; no behavior
+  change).
+
+## [0.9.1] - 2026-06-12
+
+### Fixed
+
+- **Docker image CA bundle** is now copied from the builder stage instead of installed via
+  `apk add`, fixing TLS trust in the runtime image.
+
+## [0.9.0] - 2026-06-12
+
+### Added
+
+- **Native `.env` loading at startup** with no-override semantics (existing environment
+  variables win), so local runs pick up a `.env` file automatically.
+
+## [0.8.0] - 2026-06-11
+
+### Changed
+
+- **Renamed the environment-variable prefix `FLEX1_*` → `PFLEX1_*`** to match the family
+  convention. Update your environment and compose overrides.
+- Aligned `.gitignore` with the canonical family template.
+
+### Added
+
+- `${ENV}` expansion is now supported in the config `username` field, and the compose stack is
+  parameterized via the array env prefix.
+
+## [0.7.0] - 2026-06-11
+
+### Added
+
+- **`--trace` flag and `--once --debug` sample dump** for live-cluster validation: `--trace`
+  logs API response bodies and `--once --debug` dumps every collected sample.
+
+### Changed
+
+- Backported CI workflow hardening from `obs_exporter`.
 
 ## [0.6.4] - 2026-06-09
 
@@ -186,7 +288,19 @@ Maintenance release (CI/packaging).
 - Initial release: **PowerFlex Gen1 exporter** exposing metrics via a Prometheus
   `/metrics` endpoint and an OTLP metric push.
 
-[Unreleased]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.4...HEAD
+[Unreleased]: https://github.com/fjacquet/pflex_exporter/compare/v0.10.5...HEAD
+[0.10.5]: https://github.com/fjacquet/pflex_exporter/compare/v0.10.4...v0.10.5
+[0.10.4]: https://github.com/fjacquet/pflex_exporter/compare/v0.10.3...v0.10.4
+[0.10.3]: https://github.com/fjacquet/pflex_exporter/compare/v0.10.2...v0.10.3
+[0.10.2]: https://github.com/fjacquet/pflex_exporter/compare/v0.10.1...v0.10.2
+[0.10.1]: https://github.com/fjacquet/pflex_exporter/compare/v0.10.0...v0.10.1
+[0.10.0]: https://github.com/fjacquet/pflex_exporter/compare/v0.9.3...v0.10.0
+[0.9.3]: https://github.com/fjacquet/pflex_exporter/compare/v0.9.2...v0.9.3
+[0.9.2]: https://github.com/fjacquet/pflex_exporter/compare/v0.9.1...v0.9.2
+[0.9.1]: https://github.com/fjacquet/pflex_exporter/compare/v0.9.0...v0.9.1
+[0.9.0]: https://github.com/fjacquet/pflex_exporter/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/fjacquet/pflex_exporter/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.4...v0.7.0
 [0.6.4]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/fjacquet/pflex_exporter/compare/v0.6.1...v0.6.2
