@@ -136,6 +136,7 @@ explicit units and Gen2-specific labels:
 
 | Metric | Labels | Meaning |
 |---|---|---|
+| `pflex_exporter_build_info` | `version`, `goversion` | Always `1`; an **exporter-level** metric whose `version` (ldflag-set build version) and `goversion` labels identify the running build. Unlike `pflex_*` metrics it carries **no** `cluster`/identity label — it describes the exporter process, not a cluster. |
 | `pflex_up` | `cluster` | `1` if the cluster was scraped successfully this cycle, else `0`. |
 | `pflex_last_scrape_timestamp_seconds` | `cluster` | Unix time of the last successful collection. |
 | `pflex_cluster_generation` | `cluster`, `generation` | Always `1`; the `generation` label is `gen1`, `gen2`, or `unknown`. |

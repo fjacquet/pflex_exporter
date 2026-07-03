@@ -5,6 +5,15 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`pflex_exporter_build_info` metric.** An exporter-level gauge (constant `1`) carrying the
+  running exporter `version` and `goversion` labels, so a `/metrics` scrape reveals exactly
+  which build is running. Standard Prometheus build-info pattern; part of a family-wide
+  standardization across the exporter fleet.
+
 ## [0.6.4] - 2026-06-09
 
 ### Added
