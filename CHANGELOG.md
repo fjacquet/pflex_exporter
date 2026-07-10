@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.6] - 2026-07-10
+
+### Security
+
+- Bumped the Go toolchain to 1.26.5 to patch **GO-2026-5856** (crypto/tls). Unblocks the
+  family-wide `govulncheck` gate.
+
+### Fixed
+
+- **Restored multi-arch GHCR image publishing.** Re-added the GoReleaser `dockers_v2` block
+  (and a matching `Dockerfile.goreleaser`) so releases publish
+  `ghcr.io/fjacquet/pflex_exporter` for `linux/amd64` + `linux/arm64` again, with SBOM and
+  provenance attestations. The image had been frozen at `0.10.2`.
+
 ## [0.10.5] - 2026-07-03
 
 ### Added
