@@ -55,15 +55,21 @@ opentelemetry:
 # Gateway, username, and password support ${ENV_VAR} interpolation or passwordFile for secrets.
 # Single-cluster quickstart: set PFLEX1_GATEWAY / PFLEX1_USERNAME / PFLEX1_PASSWORD in .env (or your shell)
 # and the compose stack picks them up automatically.
-# Multi-cluster: add one entry per cluster with literal values or your own env refs (e.g. ${PFLEX2_GATEWAY}).
+# Multi-cluster: add one entry per cluster with literal values or your own env refs (e.g. ${PFLEX2_GATEWAY},
+# ${PFLEX2_SKIP_CERTIFICATE}).
 clusters:
   - name: flex-cluster1
     gateway: "${PFLEX1_GATEWAY}"   # literal style: gateway: flex-clu1-gw01
     username: "${PFLEX1_USERNAME}" # literal style: username: flex-username
     password: "${PFLEX1_PASSWORD}"
+    # Skip TLS certificate verification for this cluster (INSECURE — use only with a
+    # self-signed cert on a trusted network). Accepts a literal bool or a ${VAR} reference:
+    #   insecureSkipVerify: true
+    #   insecureSkipVerify: "${PFLEX1_SKIP_CERTIFICATE}"
     insecureSkipVerify: true
 #  - name: flex-cluster2
 #    gateway: flex-clu2-gw01
 #    username: flex-username
 #    passwordFile: /etc/pflex_exporter/flex2.pass
+#    # insecureSkipVerify: "${PFLEX2_SKIP_CERTIFICATE}"
 #    insecureSkipVerify: true

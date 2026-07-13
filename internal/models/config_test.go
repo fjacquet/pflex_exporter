@@ -1,6 +1,10 @@
 package models
 
-import "testing"
+import (
+	"testing"
+
+	"gopkg.in/yaml.v2"
+)
 
 func validCluster() ClusterConfig {
 	return ClusterConfig{Name: "c1", Gateway: "gw1", Username: "u", Password: "p"}
@@ -68,5 +72,72 @@ func TestMaskPassword(t *testing.T) {
 	}
 	if got := (ClusterConfig{Password: "supersecret"}).MaskPassword(); got != "su****et" {
 		t.Errorf("long password mask = %q", got)
+	}
+}
+
+func TestEnvBoolNativeAndEnvRef(t *testing.T) {
+	// native YAML bool
+	var native struct {
+		Skip EnvBool `yaml:"skip"`
+	}
+	if err := yaml.Unmarshal([]byte("skip: true\n"), &native); err != nil {
+		t.Fatalf("unmarshal native bool: %v", err)
+	}
+	if !native.Skip.Bool() {
+		t.Fatal("native bool true not resolved to true")
+	}
+
+	// ${VAR} reference: unresolved until Resolve is called (defaults false)
+	var ref struct {
+		Skip EnvBool `yaml:"skip"`
+	}
+	if err := yaml.Unmarshal([]byte("skip: ${PFLEX1_SKIP_CERTIFICATE}\n"), &ref); err != nil {
+		t.Fatalf("unmarshal env ref: %v", err)
+	}
+	if ref.Skip.Bool() {
+		t.Fatal("env ref should be false before Resolve")
+	}
+	// resolve via a fake expander returning "true"
+	if err := ref.Skip.Resolve(func(s string) (string, error) { return "true", nil }); err != nil {
+		t.Fatalf("resolve: %v", err)
+	}
+	if !ref.Skip.Bool() {
+		t.Fatal("env ref true not resolved")
+	}
+
+	// absent field defaults to false and Resolve is a no-op
+	var absent struct {
+		Skip EnvBool `yaml:"skip"`
+	}
+	if err := yaml.Unmarshal([]byte("other: 1\n"), &absent); err != nil {
+		t.Fatalf("unmarshal absent: %v", err)
+	}
+	if err := absent.Skip.Resolve(func(s string) (string, error) { return "", nil }); err != nil {
+		t.Fatalf("resolve absent: %v", err)
+	}
+	if absent.Skip.Bool() {
+		t.Fatal("absent field should be false")
+	}
+}
+
+func TestEnvBoolResolveNonBooleanErrors(t *testing.T) {
+	var ref struct {
+		Skip EnvBool `yaml:"skip"`
+	}
+	if err := yaml.Unmarshal([]byte("skip: ${PFLEX1_SKIP_CERTIFICATE}\n"), &ref); err != nil {
+		t.Fatalf("unmarshal env ref: %v", err)
+	}
+	err := ref.Skip.Resolve(func(s string) (string, error) { return "not-a-bool", nil })
+	if err == nil {
+		t.Fatal("expected error resolving a non-boolean value")
+	}
+}
+
+func TestEnvBoolUnmarshalRejectsNonBoolNonString(t *testing.T) {
+	var target struct {
+		Skip EnvBool `yaml:"skip"`
+	}
+	if err := yaml.Unmarshal([]byte("skip: [1, 2, 3]\n"), &target); err == nil {
+		t.Fatal("expected error unmarshaling a sequence into EnvBool")
 	}
 }

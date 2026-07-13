@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/fjacquet/pflex_exporter/internal/models"
+	"gopkg.in/yaml.v2"
 )
 
 func TestExpandEnvSuccess(t *testing.T) {
@@ -72,5 +73,69 @@ func TestResolveSecretsUnsetUsernameVarFailsLoudly(t *testing.T) {
 
 	if err := ResolveSecrets(cfg); err == nil {
 		t.Error("expected error for unset username variable, got nil")
+	}
+}
+
+func TestResolveSecretsNativeBoolInsecureSkipVerify(t *testing.T) {
+	cfg := &models.Config{Clusters: []models.ClusterConfig{
+		{Name: "a", Gateway: "gw-a", Username: "u", Password: "p", InsecureSkipVerify: models.NewEnvBool(true)},
+	}}
+
+	if err := ResolveSecrets(cfg); err != nil {
+		t.Fatalf("ResolveSecrets: %v", err)
+	}
+	if !cfg.Clusters[0].InsecureSkipVerify.Bool() {
+		t.Error("native bool insecureSkipVerify=true should remain true after ResolveSecrets")
+	}
+}
+
+func TestResolveSecretsSkipCertificateEnvRefTrue(t *testing.T) {
+	t.Setenv("PFLEX1_SKIP_CERTIFICATE", "true")
+	cfg := &models.Config{Clusters: []models.ClusterConfig{{
+		Name: "c1", Gateway: "h", Username: "u", Password: "p",
+	}}}
+	// Simulate YAML having set a ${VAR} reference on the field.
+	if err := yaml.Unmarshal([]byte("insecureSkipVerify: ${PFLEX1_SKIP_CERTIFICATE}\n"), &cfg.Clusters[0]); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	cfg.Clusters[0].Name, cfg.Clusters[0].Gateway = "c1", "h"
+	cfg.Clusters[0].Username, cfg.Clusters[0].Password = "u", "p"
+
+	if err := ResolveSecrets(cfg); err != nil {
+		t.Fatalf("ResolveSecrets: %v", err)
+	}
+	if !cfg.Clusters[0].InsecureSkipVerify.Bool() {
+		t.Fatal("PFLEX1_SKIP_CERTIFICATE=true did not resolve to skip-verify")
+	}
+}
+
+func TestResolveSecretsSkipCertificateEnvRefUnsetFailsLoudly(t *testing.T) {
+	cfg := &models.Config{Clusters: []models.ClusterConfig{{
+		Name: "c1", Gateway: "h", Username: "u", Password: "p",
+	}}}
+	if err := yaml.Unmarshal([]byte("insecureSkipVerify: ${PFLEX_DEFINITELY_UNSET_SKIP_CERT}\n"), &cfg.Clusters[0]); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	cfg.Clusters[0].Name, cfg.Clusters[0].Gateway = "c1", "h"
+	cfg.Clusters[0].Username, cfg.Clusters[0].Password = "u", "p"
+
+	if err := ResolveSecrets(cfg); err == nil {
+		t.Error("expected error for unset insecureSkipVerify env var, got nil")
+	}
+}
+
+func TestResolveSecretsSkipCertificateEnvRefNonBooleanErrors(t *testing.T) {
+	t.Setenv("PFLEX1_SKIP_CERTIFICATE", "maybe")
+	cfg := &models.Config{Clusters: []models.ClusterConfig{{
+		Name: "c1", Gateway: "h", Username: "u", Password: "p",
+	}}}
+	if err := yaml.Unmarshal([]byte("insecureSkipVerify: ${PFLEX1_SKIP_CERTIFICATE}\n"), &cfg.Clusters[0]); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	cfg.Clusters[0].Name, cfg.Clusters[0].Gateway = "c1", "h"
+	cfg.Clusters[0].Username, cfg.Clusters[0].Password = "u", "p"
+
+	if err := ResolveSecrets(cfg); err == nil {
+		t.Error("expected error for non-boolean PFLEX1_SKIP_CERTIFICATE value, got nil")
 	}
 }
