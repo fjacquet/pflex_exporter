@@ -49,6 +49,10 @@ func ResolveSecrets(cfg *models.Config) error {
 		}
 		cl.Username = username
 
+		if err := cl.InsecureSkipVerify.Resolve(ExpandEnv); err != nil {
+			return fmt.Errorf("cluster %q insecureSkipVerify: %w", cl.Name, err)
+		}
+
 		if cl.Password == "" && cl.PasswordFile != "" {
 			data, err := os.ReadFile(cl.PasswordFile)
 			if err != nil {

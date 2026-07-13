@@ -39,6 +39,10 @@ clusters:
     gateway: <ip-or-host>        # PowerFlex 4.x: primary ingress IP (Manager UI)
     username: <monitor-user>
     password: "${PFLEX1_PASSWORD}"
+    # Skip TLS certificate verification for this cluster (INSECURE — use only with a
+    # self-signed cert on a trusted network). Accepts a literal bool or a ${VAR} reference:
+    #   insecureSkipVerify: true
+    #   insecureSkipVerify: "${PFLEX1_SKIP_CERTIFICATE}"
     insecureSkipVerify: true
 ```
 
@@ -56,7 +60,7 @@ clusters:
 | `opentelemetry.metrics` | `enabled`, `endpoint`, `interval` | OTLP gRPC metric push. |
 | `opentelemetry.tracing` | `enabled`, `endpoint`, `samplingRate` | OTLP gRPC tracing for diagnosing slow cycles. |
 | `clusters[]` | `name` | Unique; becomes the `cluster` label/attribute on every metric. |
-| `clusters[]` | `gateway`, `username`, `password` | Connection details. `insecureSkipVerify` accepts self-signed gateway certs. |
+| `clusters[]` | `gateway`, `username`, `password` | Connection details. `insecureSkipVerify` should stay `false`/unset in production; enable it only for lab clusters with self-signed certificates. It accepts either a literal bool (`insecureSkipVerify: true`) or a `${VAR}` environment reference resolved at startup (`insecureSkipVerify: "${PFLEX1_SKIP_CERTIFICATE}"`), the same pattern used for `gateway`/`username`/`password`. |
 
 ## Scaling large estates
 
@@ -171,11 +175,13 @@ clusters:
     gateway: "${PFLEX1_GATEWAY}"
     username: "${PFLEX1_USERNAME}"
     password: "${PFLEX1_PASSWORD}"
+    # literal bool (below), or an env ref: insecureSkipVerify: "${PFLEX1_SKIP_CERTIFICATE}"
     insecureSkipVerify: true
   - name: flex-cluster2
     gateway: "${PFLEX2_GATEWAY}"
     username: "${PFLEX2_USERNAME}"
     password: "${PFLEX2_PASSWORD}"
+    # literal bool (below), or an env ref: insecureSkipVerify: "${PFLEX2_SKIP_CERTIFICATE}"
     insecureSkipVerify: true
 ```
 

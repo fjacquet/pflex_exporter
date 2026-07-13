@@ -81,7 +81,7 @@ func NewClusterClient(cfg models.ClusterConfig, opts ...ClientOption) *ClusterCl
 		opt(&options)
 	}
 
-	if cfg.InsecureSkipVerify {
+	if cfg.InsecureSkipVerify.Bool() {
 		log.Warnf("cluster %q: TLS certificate verification disabled (insecureSkipVerify=true)", cfg.Name)
 	}
 
@@ -107,7 +107,7 @@ func NewClusterClient(cfg models.ClusterConfig, opts ...ClientOption) *ClusterCl
 		IdleConnTimeout:     idleConnTimeout,
 		TLSHandshakeTimeout: 10 * time.Second,
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: cfg.InsecureSkipVerify, //nolint:gosec // operator-controlled, common for self-signed gateways
+			InsecureSkipVerify: cfg.InsecureSkipVerify.Bool(), //nolint:gosec // operator-controlled, common for self-signed gateways
 			MinVersion:         tls.VersionTLS12,
 		},
 	}

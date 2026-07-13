@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Env-driven TLS verification skip (`PFLEX1_SKIP_CERTIFICATE`)** — the per-cluster
+  `insecureSkipVerify` setting now accepts either a native YAML boolean or a `${VAR}`
+  environment reference (e.g. `${PFLEX1_SKIP_CERTIFICATE}`), resolved at startup, matching
+  the existing `${PFLEX1_*}` pattern. Wired into `config.yaml`, `docker-compose.yml`, and
+  `.env.example`.
+
 ## [0.10.6] - 2026-07-10
 
 ### Security

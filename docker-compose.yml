@@ -18,6 +18,9 @@ services:
       - PFLEX1_GATEWAY=${PFLEX1_GATEWAY:-flex-clu1-gw01}
       - PFLEX1_USERNAME=${PFLEX1_USERNAME:-flex-username}
       - PFLEX1_PASSWORD=${PFLEX1_PASSWORD:-}
+      # Optional: only takes effect if config.yaml's insecureSkipVerify is switched to
+      # ${PFLEX1_SKIP_CERTIFICATE} (INSECURE — self-signed certs on a trusted network only).
+      - PFLEX1_SKIP_CERTIFICATE=${PFLEX1_SKIP_CERTIFICATE:-false}
     restart: unless-stopped
 
   prometheus:

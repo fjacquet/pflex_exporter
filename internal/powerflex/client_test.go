@@ -198,7 +198,7 @@ func (g *mockGateway) clientNamed(t *testing.T, name string) *ClusterClient {
 		Gateway:            host,
 		Username:           "user",
 		Password:           "pass",
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: models.NewEnvBool(true),
 	})
 }
 
@@ -487,7 +487,7 @@ func TestTraceDoesNotBreakCalls(t *testing.T) {
 		Gateway:            host,
 		Username:           "user",
 		Password:           "pass",
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: models.NewEnvBool(true),
 	}, WithTrace(true))
 	defer func() { _ = c.Close() }()
 
