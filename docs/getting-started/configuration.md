@@ -175,12 +175,14 @@ clusters:
     gateway: "${PFLEX1_GATEWAY}"
     username: "${PFLEX1_USERNAME}"
     password: "${PFLEX1_PASSWORD}"
-    insecureSkipVerify: "${PFLEX1_SKIP_CERTIFICATE}"
+    # literal bool (below), or an env ref: insecureSkipVerify: "${PFLEX1_SKIP_CERTIFICATE}"
+    insecureSkipVerify: true
   - name: flex-cluster2
     gateway: "${PFLEX2_GATEWAY}"
     username: "${PFLEX2_USERNAME}"
     password: "${PFLEX2_PASSWORD}"
-    insecureSkipVerify: "${PFLEX2_SKIP_CERTIFICATE}"
+    # literal bool (below), or an env ref: insecureSkipVerify: "${PFLEX2_SKIP_CERTIFICATE}"
+    insecureSkipVerify: true
 ```
 
 Pass the additional variables to the compose stack (e.g. in `.env` alongside
