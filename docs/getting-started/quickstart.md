@@ -14,7 +14,10 @@ curl -s localhost:9445/health
 ```
 
 You should see `pflex_up{cluster="flex-cluster1"} 1` once the first collection cycle
-completes, and `/health` returns `200 OK`.
+completes, and `/health` returns `200 OK` with a JSON body
+(`{"clusters": [{"cluster": "...", "ok": true, "last_scrape": "...", "err": ""}]}`) —
+always 200, even before the first collection cycle or if every cluster is unreachable.
+`/livez` and `/readyz` are also available for probe wiring; both always answer 200.
 
 ## One-shot mode
 

@@ -27,7 +27,12 @@ kubectl rollout status deploy/pflex-exporter
   all capabilities dropped, `seccompProfile: RuntimeDefault`. A small `emptyDir` is
   mounted at `/tmp`.
 - **Probes.** Liveness hits `/metrics` (process health, always 200 while serving);
-  readiness hits `/health` (ready only once at least one cluster has been collected).
+  readiness hits `/health`. `/health` always answers 200 now — an unreachable cluster is
+  data it reports (JSON body: `clusters: [{cluster, ok, last_scrape, err}]`), not a
+  failure of the exporter — so it no longer gates readiness on collection state. The
+  Helm chart's default probes (`livenessProbe`/`readinessProbe`) point at the dedicated
+  `/livez`/`/readyz` endpoints instead, which always answer 200 with no cluster-state
+  dependency at all; see ADR-0004.
 - **Secrets.** Passwords come from the Secret via `envFrom` and are interpolated into
   `config.yaml` as `${PFLEX1_PASSWORD}`. Prefer an external secret manager
   (External Secrets Operator, sealed-secrets, etc.) over committing the example Secret.
