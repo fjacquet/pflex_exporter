@@ -23,6 +23,12 @@ services:
       - PFLEX1_USERNAME=${PFLEX1_USERNAME:-flex-username}
       - PFLEX1_PASSWORD=${PFLEX1_PASSWORD:-}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:9445/livez"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   prometheus:
     image: prom/prometheus:latest

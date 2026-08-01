@@ -22,6 +22,12 @@ services:
       # ${PFLEX1_SKIP_CERTIFICATE} (INSECURE — self-signed certs on a trusted network only).
       - PFLEX1_SKIP_CERTIFICATE=${PFLEX1_SKIP_CERTIFICATE:-false}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:9445/livez"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   prometheus:
     image: prom/prometheus:latest

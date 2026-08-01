@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `HEALTHCHECK` added to the published Docker image, checking `/livez`. See
+  ADR-0005.
+
 ## [0.12.0] - 2026-08-01
 
 ### Added
