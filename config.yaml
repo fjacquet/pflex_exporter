@@ -66,7 +66,10 @@ clusters:
     # self-signed cert on a trusted network). Accepts a literal bool or a ${VAR} reference:
     #   insecureSkipVerify: true
     #   insecureSkipVerify: "${PFLEX1_SKIP_CERTIFICATE}"
-    insecureSkipVerify: true
+    # The fallback is ":-true", this repo's shipped default (PowerFlex gateways ship
+    # self-signed certs). A bare ${PFLEX1_SKIP_CERTIFICATE} would abort startup when unset,
+    # and a ":-false" fallback would silently start verifying against those certs.
+    insecureSkipVerify: "${PFLEX1_SKIP_CERTIFICATE:-true}"
 #  - name: flex-cluster2
 #    gateway: flex-clu2-gw01
 #    username: flex-username
