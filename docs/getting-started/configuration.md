@@ -141,7 +141,7 @@ and it differs by where you put the password:
 | `.env`, single-quoted `'…'` | Fully literal — no `$` expansion, no `\` escapes, no `#` comment. Best default. Cannot contain a literal `'`. |
 | `.env`, double-quoted `"…"` | Expands `$VAR`/`${VAR}` and processes `\` escapes. `$`, `\`, `"` are special — write `\$`, `\\`, `\"`. |
 | `.env`, unquoted | `$VAR` expands; a ` #` (space-hash) starts a comment; a value **starting** with `'`/`"` is treated as quoted. |
-| `config.yaml` inline | Only the exact `${NAME}` token is interpolated (`os.LookupEnv`), so a literal password containing `${NAME}` is treated as an env ref. Prefer referencing an env var. |
+| `config.yaml` inline | Only the `${NAME}` and `${NAME:-default}` tokens are interpolated (`os.LookupEnv`), so a literal password containing either form is treated as an env ref. Prefer referencing an env var. |
 | `passwordFile` | Read **verbatim** (only surrounding whitespace trimmed) — no interpolation, no escaping. The bulletproof option. |
 
 For quotes inside the password specifically: use double quotes to include a `'`, single
@@ -206,6 +206,24 @@ clusters:
     passwordFile: /etc/pflex_exporter/flex2.pass
     insecureSkipVerify: true
 ```
+
+## Fallback values: `${VAR:-default}`
+
+A bare `${VAR}` **fails at startup** when the variable is unset — misconfiguration should
+be loud rather than authenticate with an empty secret. Where a safe default exists, write
+`${VAR:-default}` instead: the reference then never errors, falling back when the variable
+is unset *or* empty, exactly as in the shell and in `docker-compose.yml`. That is why the
+shipped `config.yaml` can be env-driven and still start out of the box:
+
+```yaml
+insecureSkipVerify: "${PFLEX1_SKIP_CERTIFICATE:-true}"
+```
+
+`true` is this exporter's original shipped default, so a host that never exported
+`PFLEX1_SKIP_CERTIFICATE` behaves exactly as before.
+
+Use it for settings, not for secrets — a `${PFLEX1_PASSWORD:-}` would silently turn a missing
+password into an empty one.
 
 ## Hot reload
 
