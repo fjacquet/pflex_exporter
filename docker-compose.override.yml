@@ -1,0 +1,7 @@
+# Local-only override (not for commit): Prometheus host port 9090 collides with the
+# local `mocknw` process. Grafana talks to Prometheus on the internal network
+# (prometheus:9090), so remapping the *host* port doesn't affect dashboard rendering.
+services:
+  prometheus:
+    ports:
+      - "9091:9090"
