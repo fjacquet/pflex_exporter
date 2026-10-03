@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.2] - 2026-10-02
+
+### Security
+
+- `google.golang.org/grpc` 1.83.0 -> 1.83.2. It is held there: v1.84.0 is affected by
+  **GO-2026-6443**.
+
+### Changed
+
+- Go toolchain moved to 1.27.1 (`go.mod` and the `Dockerfile` builder image);
+  `golangci-lint` bumped v2.12.2 -> v2.13.2 and `goreleaser` v2.16.0 -> v2.18.0.
+- Dependency refresh (`go get -u ./...`): `k8s.io/api`, `k8s.io/apimachinery` and
+  `k8s.io/client-go` 0.36.3 -> 0.37.1, `go.opentelemetry.io/otel` family 1.45.0 -> 1.47.0,
+  `github.com/sirupsen/logrus` 1.10.0 -> 1.10.2, `github.com/prometheus/client_model`
+  0.6.2 -> 0.6.3, `golang.org/x/sync` 0.22.0 -> 0.23.0.
+- `k8s.io/kube-openapi` pinned at v0.0.0-20260721132016-d427ff9ee9ad because
+  `apimachinery` needs `structured-merge-diff` v6.
+- Security workflow caller added (`go-security` via `fjacquet/ci`).
+
+## [0.15.0] - 2026-08-15
+
 ### Added
 
 - `${VAR:-default}` fallbacks in config env references, ported from `pscale_exporter`.
@@ -351,7 +372,9 @@ Maintenance release (CI/packaging).
 - Initial release: **PowerFlex Gen1 exporter** exposing metrics via a Prometheus
   `/metrics` endpoint and an OTLP metric push.
 
-[Unreleased]: https://github.com/fjacquet/pflex_exporter/compare/v0.10.5...HEAD
+[Unreleased]: https://github.com/fjacquet/pflex_exporter/compare/v0.15.2...HEAD
+[0.15.2]: https://github.com/fjacquet/pflex_exporter/compare/v0.15.1...v0.15.2
+[0.15.0]: https://github.com/fjacquet/pflex_exporter/compare/v0.14.0...v0.15.0
 [0.10.5]: https://github.com/fjacquet/pflex_exporter/compare/v0.10.4...v0.10.5
 [0.10.4]: https://github.com/fjacquet/pflex_exporter/compare/v0.10.3...v0.10.4
 [0.10.3]: https://github.com/fjacquet/pflex_exporter/compare/v0.10.2...v0.10.3
