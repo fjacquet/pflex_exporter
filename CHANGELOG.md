@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Move the Go toolchain to 1.27.2 (`go.mod`, `Dockerfile` builder image) to fix the stdlib
+  vulnerabilities GO-2026-6603, GO-2026-6605, GO-2026-6607, GO-2026-6608, GO-2026-6610,
+  GO-2026-6611, GO-2026-6613 and GO-2026-6617 (`net/http`, `net/http/internal/http2`,
+  `crypto/tls`, `mime/multipart`).
+- Update dependencies (`go get -u ./...`), including `golang.org/x/net` v0.59.0 -> v0.60.0
+  (fixes its vulnerabilities), `golang.org/x/sys` v0.48.0 -> v0.49.0,
+  `golang.org/x/sync` v0.23.0 -> v0.24.0 and `github.com/prometheus/client_golang`
+  v1.24.1 -> v1.25.0.
+- Bump `golangci-lint` v2.13.2 -> v2.14.0 (`Makefile`): v2.13.2 cannot type-check against
+  the Go 1.27.2 standard library.
+
 ## [0.15.2] - 2026-10-02
 
 ### Security
